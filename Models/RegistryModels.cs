@@ -1,6 +1,6 @@
 using Microsoft.Win32;
 
-namespace MGA_RegistryChecker.Models;
+namespace MgaRegistryChecker.Models;
 
 public enum WatchMode
 {

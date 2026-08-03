@@ -1,8 +1,8 @@
 using System.Windows;
-using MGA_RegistryChecker.Presentation;
-using MGA_RegistryChecker.Services;
+using MgaRegistryChecker.Presentation;
+using MgaRegistryChecker.Services;
 
-namespace MGA_RegistryChecker;
+namespace MgaRegistryChecker;
 
 public partial class App : Application
 {

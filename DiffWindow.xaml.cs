@@ -1,14 +1,14 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using MGA_RegistryChecker.Models;
-using MGA_RegistryChecker.Services;
-using MGA_RegistryChecker.ViewModels;
+using MgaRegistryChecker.Models;
+using MgaRegistryChecker.Services;
+using MgaRegistryChecker.ViewModels;
 
-namespace MGA_RegistryChecker;
+namespace MgaRegistryChecker;
 
 public partial class DiffWindow : Window
 {

@@ -3,7 +3,7 @@ using System.Media;
 using Microsoft.Win32;
 using System.Windows;
 
-namespace MGA_RegistryChecker.Services;
+namespace MgaRegistryChecker.Services;
 
 /// <summary>
 /// コントロールパネルのサウンド設定（プログラム イベント）に従って効果音を鳴らす MessageBox。

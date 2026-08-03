@@ -1,7 +1,7 @@
 using System.IO;
 using Microsoft.Win32;
 
-namespace MGA_RegistryChecker.Services;
+namespace MgaRegistryChecker.Services;
 
 public static class RegistryPathHelper
 {

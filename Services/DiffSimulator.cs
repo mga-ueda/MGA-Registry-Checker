@@ -1,7 +1,7 @@
 using Microsoft.Win32;
-using MGA_RegistryChecker.Models;
+using MgaRegistryChecker.Models;
 
-namespace MGA_RegistryChecker.Services;
+namespace MgaRegistryChecker.Services;
 
 /// <summary>DEBUG 用: 実レジストリを触れない擬似差分を生成する。</summary>
 public static class DiffSimulator
@@ -10,7 +10,7 @@ public static class DiffSimulator
 
     private static readonly string[] SampleRoots =
     [
-        @"HKEY_CURRENT_USER\Software\MGA-RegistryChecker\Demo",
+        @"HKEY_CURRENT_USER\Software\MGA-Registry-Checker\Demo",
         @"HKEY_CURRENT_USER\Control Panel\Desktop",
         @"HKEY_CURRENT_USER\Control Panel\Desktop\WindowMetrics",
         @"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer",

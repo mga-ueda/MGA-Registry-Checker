@@ -1,4 +1,4 @@
-namespace MGA_RegistryChecker.Services;
+namespace MgaRegistryChecker.Services;
 
 /// <summary>コマンドライン引数の解釈。</summary>
 public static class AppLaunchArgs

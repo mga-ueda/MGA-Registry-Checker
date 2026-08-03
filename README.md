@@ -2,6 +2,12 @@
 
 任意のレジストリ場所をスナップショットとして記憶し、差分があれば通知・取捨選択できる Windows アプリです。常駐せず、起動〜確認〜終了のワンショット用途を想定しています。
 
+| 用途 | 名前 |
+|------|------|
+| 正式なアプリ名 | **MGA Registry Checker** |
+| 名前空間 | `MgaRegistryChecker` |
+| リポジトリ / プロジェクト / exe | `MGA-Registry-Checker` |
+
 ## 機能概要
 
 - レジストリパスを手入力（OK / NG で検証）
@@ -30,8 +36,8 @@ dotnet run -c Release -- --check
 ビルド成果物の例:
 
 ```powershell
-.\bin\Release\net8.0-windows\MGA-RegistryChecker.exe
-.\bin\Release\net8.0-windows\MGA-RegistryChecker.exe --check
+.\bin\Release\net8.0-windows\MGA-Registry-Checker.exe
+.\bin\Release\net8.0-windows\MGA-Registry-Checker.exe --check
 ```
 
 ## コマンドライン（他アプリ連携）
@@ -53,14 +59,14 @@ dotnet run -c Release -- --check
 
 ```powershell
 # 起動後の戻りを待つ（推奨）
-Start-Process -FilePath "C:\Path\MGA-RegistryChecker.exe" -ArgumentList "--check" -Wait -PassThru
+Start-Process -FilePath "C:\Path\MGA-Registry-Checker.exe" -ArgumentList "--check" -Wait -PassThru
 ```
 
 ```csharp
 // Process.Start で同期待ち
 using var p = Process.Start(new ProcessStartInfo
 {
-    FileName = @"C:\Path\MGA-RegistryChecker.exe",
+    FileName = @"C:\Path\MGA-Registry-Checker.exe",
     Arguments = "--check",
     UseShellExecute = false
 });

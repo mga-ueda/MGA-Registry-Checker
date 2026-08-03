@@ -1,6 +1,6 @@
 using Microsoft.Win32;
 
-namespace MGA_RegistryChecker.Services;
+namespace MgaRegistryChecker.Services;
 
 /// <summary>レジストリ値のスナップショット用エンコード / デコード。</summary>
 public static class RegistryValueCodec

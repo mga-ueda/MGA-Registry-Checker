@@ -1,8 +1,8 @@
 using System.IO;
 using System.Text;
-using MGA_RegistryChecker.Models;
+using MgaRegistryChecker.Models;
 
-namespace MGA_RegistryChecker.Services;
+namespace MgaRegistryChecker.Services;
 
 public sealed class SnapshotStore
 {

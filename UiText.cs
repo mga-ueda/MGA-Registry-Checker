@@ -1,4 +1,4 @@
-namespace MGA_RegistryChecker;
+namespace MgaRegistryChecker;
 
 /// <summary>
 /// アプリ内の表示文言・文言構成を一箇所に集約する。
@@ -7,7 +7,7 @@ namespace MGA_RegistryChecker;
 public static class UiText
 {
     // ----- アプリ共通 -----
-    public const string AppName = Services.AppPaths.AppFolder;
+    public const string AppName = Services.AppPaths.AppDisplayName;
     public const string DefaultValueName = "(Default)";
     public const string Ready = "準備完了";
 

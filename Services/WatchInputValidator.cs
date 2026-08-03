@@ -1,4 +1,4 @@
-namespace MGA_RegistryChecker.Services;
+namespace MgaRegistryChecker.Services;
 
 /// <summary>メイン画面の Key / Value 入力検証。</summary>
 public static class WatchInputValidator

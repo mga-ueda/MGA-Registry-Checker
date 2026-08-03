@@ -1,8 +1,8 @@
 using System.Text.Json.Serialization;
-using MGA_RegistryChecker.Models;
+using MgaRegistryChecker.Models;
 using Microsoft.Win32;
 
-namespace MGA_RegistryChecker.Services;
+namespace MgaRegistryChecker.Services;
 
 [JsonSourceGenerationOptions(
     WriteIndented = true,

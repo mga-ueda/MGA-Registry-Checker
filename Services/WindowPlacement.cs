@@ -1,6 +1,6 @@
 using System.Windows;
 
-namespace MGA_RegistryChecker.Services;
+namespace MgaRegistryChecker.Services;
 
 /// <summary>ウィンドウ位置の復元・プライマリ画面中央寄せ。</summary>
 public static class WindowPlacement

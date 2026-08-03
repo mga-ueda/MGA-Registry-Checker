@@ -1,6 +1,6 @@
-using MGA_RegistryChecker.Models;
+using MgaRegistryChecker.Models;
 
-namespace MGA_RegistryChecker.Services;
+namespace MgaRegistryChecker.Services;
 
 /// <summary>
 /// 差分ダイアログ結果をレジストリ書込とスナップショット更新に反映する（副作用の単一入口）。

@@ -1,6 +1,6 @@
-using MGA_RegistryChecker.Models;
+using MgaRegistryChecker.Models;
 
-namespace MGA_RegistryChecker.ViewModels;
+namespace MgaRegistryChecker.ViewModels;
 
 public sealed class WatchedLocationItem
 {

@@ -2,7 +2,7 @@ using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
 
-namespace MGA_RegistryChecker.Services;
+namespace MgaRegistryChecker.Services;
 
 /// <summary>Windows のタイトルバーをアプリのダークテーマに合わせる。</summary>
 public static partial class DarkTitleBar

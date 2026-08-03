@@ -1,8 +1,8 @@
 using System.Windows;
-using MGA_RegistryChecker.Models;
-using MGA_RegistryChecker.Services;
+using MgaRegistryChecker.Models;
+using MgaRegistryChecker.Services;
 
-namespace MGA_RegistryChecker.Presentation;
+namespace MgaRegistryChecker.Presentation;
 
 public sealed class WpfDiffPresenter : IDiffPresenter
 {

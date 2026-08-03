@@ -1,6 +1,6 @@
 using Microsoft.Win32;
 
-namespace MGA_RegistryChecker.Services;
+namespace MgaRegistryChecker.Services;
 
 /// <summary>差分ダイアログ等向けの値表示整形。</summary>
 public static class RegistryValueDisplay

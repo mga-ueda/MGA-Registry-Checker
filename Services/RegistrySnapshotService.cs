@@ -1,8 +1,8 @@
 using System.IO;
 using Microsoft.Win32;
-using MGA_RegistryChecker.Models;
+using MgaRegistryChecker.Models;
 
-namespace MGA_RegistryChecker.Services;
+namespace MgaRegistryChecker.Services;
 
 public sealed class RegistrySnapshotService
 {

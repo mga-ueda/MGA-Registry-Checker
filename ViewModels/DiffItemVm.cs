@@ -1,9 +1,9 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Media;
-using MGA_RegistryChecker.Models;
+using MgaRegistryChecker.Models;
 
-namespace MGA_RegistryChecker.ViewModels;
+namespace MgaRegistryChecker.ViewModels;
 
 public sealed class DiffItemVm : INotifyPropertyChanged
 {

@@ -1,16 +1,16 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using MGA_RegistryChecker.Models;
-using MGA_RegistryChecker.Presentation;
-using MGA_RegistryChecker.Services;
-using MGA_RegistryChecker.ViewModels;
+using MgaRegistryChecker.Models;
+using MgaRegistryChecker.Presentation;
+using MgaRegistryChecker.Services;
+using MgaRegistryChecker.ViewModels;
 
-namespace MGA_RegistryChecker;
+namespace MgaRegistryChecker;
 
 public partial class MainWindow : Window
 {

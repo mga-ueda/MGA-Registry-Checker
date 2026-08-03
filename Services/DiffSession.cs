@@ -1,7 +1,7 @@
 using System.Windows;
-using MGA_RegistryChecker.Models;
+using MgaRegistryChecker.Models;
 
-namespace MGA_RegistryChecker.Services;
+namespace MgaRegistryChecker.Services;
 
 /// <summary>監視場所の差分比較と、差分ダイアログ結果の適用オーケストレーション。</summary>
 public sealed class DiffSession

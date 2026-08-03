@@ -1,6 +1,6 @@
-using MGA_RegistryChecker.Models;
+using MgaRegistryChecker.Models;
 
-namespace MGA_RegistryChecker.Services;
+namespace MgaRegistryChecker.Services;
 
 /// <summary>差分ダイアログの表示抽象（Services は WPF を直接参照しない）。</summary>
 public interface IDiffPresenter
