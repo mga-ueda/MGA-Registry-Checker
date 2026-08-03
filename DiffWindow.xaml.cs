@@ -34,7 +34,18 @@ public partial class DiffWindow : Window
         LocationDiff diff,
         Func<DiffDialogResult, bool>? tryCommit = null,
         bool simulateOnly = false)
+        : this([diff], tryCommit, simulateOnly)
     {
+    }
+
+    public DiffWindow(
+        IReadOnlyList<LocationDiff> diffs,
+        Func<DiffDialogResult, bool>? tryCommit = null,
+        bool simulateOnly = false)
+    {
+        if (diffs is null || diffs.Count == 0)
+            throw new ArgumentException("差分がありません。", nameof(diffs));
+
         InitializeComponent();
         _tryCommit = tryCommit;
         _simulateOnly = simulateOnly;
@@ -43,17 +54,23 @@ public partial class DiffWindow : Window
         SourceInitialized += (_, _) => WindowPlacement.CenterOnPrimary(this);
         DarkTitleBar.Apply(this);
 
-        foreach (var change in diff.Changes)
+        var watchCount = diffs.Count;
+        var changeCount = 0;
+        foreach (var diff in diffs)
         {
-            var item = new DiffItemVm(change);
-            item.PropertyChanged += (_, e) =>
+            foreach (var change in diff.Changes)
             {
-                if (e.PropertyName is nameof(DiffItemVm.Action)
-                    or nameof(DiffItemVm.IsAccept)
-                    or nameof(DiffItemVm.IsRevert))
-                    UpdateApplyEnabled();
-            };
-            _items.Add(item);
+                var item = new DiffItemVm(diff, change);
+                item.PropertyChanged += (_, e) =>
+                {
+                    if (e.PropertyName is nameof(DiffItemVm.Action)
+                        or nameof(DiffItemVm.IsAccept)
+                        or nameof(DiffItemVm.IsRevert))
+                        UpdateApplyEnabled();
+                };
+                _items.Add(item);
+                changeCount++;
+            }
         }
 
         ChangeGrid.ItemsSource = _items;
@@ -62,14 +79,20 @@ public partial class DiffWindow : Window
         if (_simulateOnly)
         {
             Title = UiText.TitleDiffSimulation;
-            TitleText.Text = UiText.DiffDetectedSim(diff.Location.Path);
-            SubText.Text = UiText.DiffSubTextSim(diff.Changes.Count);
+            TitleText.Text = UiText.DiffDetectedSim(UiText.FormatWatchPath(diffs[0].Location));
+            SubText.Text = UiText.DiffSubTextSim(changeCount);
+        }
+        else if (watchCount == 1)
+        {
+            Title = UiText.TitleDiff;
+            TitleText.Text = UiText.DiffDetected(UiText.FormatWatchPath(diffs[0].Location));
+            SubText.Text = UiText.DiffSubText(changeCount);
         }
         else
         {
             Title = UiText.TitleDiff;
-            TitleText.Text = UiText.DiffDetected(diff.Location.Path);
-            SubText.Text = UiText.DiffSubText(diff.Changes.Count);
+            TitleText.Text = UiText.DiffDetectedMulti(watchCount);
+            SubText.Text = UiText.DiffSubText(changeCount, watchCount);
         }
     }
 
@@ -135,7 +158,7 @@ public partial class DiffWindow : Window
         return max;
     }
 
-    private double MeasureHeader(string header, double dpi)
+    private static double MeasureHeader(string header, double dpi)
     {
         var typeface = new Typeface(new FontFamily("Segoe UI"), FontStyles.Normal, FontWeights.SemiBold, FontStretches.Normal);
         return MeasureText(header, typeface, dpi) + 24;
@@ -399,11 +422,12 @@ public partial class DiffWindow : Window
         var dialogResult = new DiffDialogResult
         {
             Decision = decision,
-            Items = _items.Select(i => new DiffItemChoice
+            Items = [.. _items.Select(i => new DiffItemChoice
             {
+                LocationId = i.LocationId,
                 Change = i.Change,
                 Action = i.Action
-            }).ToList()
+            })]
         };
 
         if (_simulateOnly)

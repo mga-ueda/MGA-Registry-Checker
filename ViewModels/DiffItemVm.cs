@@ -10,8 +10,9 @@ public sealed class DiffItemVm : INotifyPropertyChanged
     private DiffItemAction _action = DiffItemAction.Ignore;
     private bool _updatingChecks;
 
-    public DiffItemVm(DiffChange change)
+    public DiffItemVm(LocationDiff locationDiff, DiffChange change)
     {
+        LocationId = locationDiff.Location.Id;
         Change = change;
         KindLabel = change.Kind switch
         {
@@ -41,6 +42,7 @@ public sealed class DiffItemVm : INotifyPropertyChanged
         NewText = change.NewValue ?? "";
     }
 
+    public Guid LocationId { get; }
     public DiffChange Change { get; }
     public string KindLabel { get; }
     public Brush KindBrush { get; }

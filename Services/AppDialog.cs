@@ -44,10 +44,10 @@ public static class AppDialog
         var eventNames = icon switch
         {
             MessageBoxImage.Error => new[] { "SystemHand", "SystemNotification", ".Default" },
-            MessageBoxImage.Warning => new[] { "SystemExclamation", "SystemNotification", ".Default" },
-            MessageBoxImage.Question => new[] { "SystemQuestion", "SystemNotification", "SystemAsterisk", ".Default" },
-            MessageBoxImage.Information => new[] { "SystemNotification", "SystemAsterisk", ".Default" },
-            _ => new[] { "SystemNotification", ".Default" }
+            MessageBoxImage.Warning => ["SystemExclamation", "SystemNotification", ".Default"],
+            MessageBoxImage.Question => ["SystemQuestion", "SystemNotification", "SystemAsterisk", ".Default"],
+            MessageBoxImage.Information => ["SystemNotification", "SystemAsterisk", ".Default"],
+            _ => ["SystemNotification", ".Default"]
         };
 
         foreach (var name in eventNames)

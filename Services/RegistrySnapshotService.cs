@@ -4,20 +4,17 @@ using MgaRegistryChecker.Models;
 
 namespace MgaRegistryChecker.Services;
 
-public sealed class RegistrySnapshotService
+public static class RegistrySnapshotService
 {
-    public List<RegistryKeySnapshot> Capture(WatchedLocation location) =>
+    public static List<RegistryKeySnapshot> Capture(WatchedLocation location) =>
         Capture(location.Path, location.Mode, location.ValueName);
 
-    public List<RegistryKeySnapshot> Capture(string path, WatchMode mode, string? valueName = null)
+    public static List<RegistryKeySnapshot> Capture(string path, WatchMode mode, string? valueName = null)
     {
         path = RegistryPathHelper.Normalize(path);
         var result = new List<RegistryKeySnapshot>();
 
-        using var key = RegistryPathHelper.OpenKey(path);
-        if (key is null)
-            throw new InvalidOperationException(UiText.ErrCouldNotOpenKey(path));
-
+        using var key = RegistryPathHelper.OpenKey(path) ?? throw new InvalidOperationException(UiText.ErrCouldNotOpenKey(path));
         if (mode == WatchMode.SingleValue)
         {
             CaptureSingleValue(path, key, valueName ?? string.Empty, result);
@@ -87,9 +84,7 @@ public sealed class RegistrySnapshotService
             // 既定値なし
         }
 
-        snapshot.Values = snapshot.Values
-            .OrderBy(v => v.Name, StringComparer.OrdinalIgnoreCase)
-            .ToList();
+        snapshot.Values = [.. snapshot.Values.OrderBy(v => v.Name, StringComparer.OrdinalIgnoreCase)];
         result.Add(snapshot);
 
         if (mode == WatchMode.KeyOnly)
@@ -129,7 +124,7 @@ public sealed class RegistrySnapshotService
         }
     }
 
-    public LocationDiff Compare(WatchedLocation location)
+    public static LocationDiff Compare(WatchedLocation location)
     {
         List<RegistryKeySnapshot> current;
         try
@@ -151,7 +146,7 @@ public sealed class RegistrySnapshotService
         };
     }
 
-    public void Revert(WatchedLocation location)
+    public static void Revert(WatchedLocation location)
     {
         if (location.Mode == WatchMode.SingleValue)
         {
@@ -191,7 +186,7 @@ public sealed class RegistrySnapshotService
     }
 
     /// <summary>指定した差分だけをスナップショット側の内容でレジストリに戻す。</summary>
-    public void RevertChanges(WatchedLocation location, IReadOnlyList<DiffChange> changes)
+    public static void RevertChanges(WatchedLocation location, IReadOnlyList<DiffChange> changes)
     {
         foreach (var change in changes.OrderByDescending(c => c.KeyPath.Length))
         {
@@ -268,7 +263,7 @@ public sealed class RegistrySnapshotService
             }
         }
 
-        location.Keys = keyMap.Values.OrderBy(k => k.Path, StringComparer.OrdinalIgnoreCase).ToList();
+        location.Keys = [.. keyMap.Values.OrderBy(k => k.Path, StringComparer.OrdinalIgnoreCase)];
         location.CapturedAt = DateTime.Now;
     }
 
@@ -292,12 +287,12 @@ public sealed class RegistrySnapshotService
     private static RegistryKeySnapshot CloneKey(RegistryKeySnapshot src) => new()
     {
         Path = src.Path,
-        Values = src.Values.Select(v => new RegistryValueData
+        Values = [.. src.Values.Select(v => new RegistryValueData
         {
             Name = v.Name,
             Kind = v.Kind,
             Data = v.Data
-        }).ToList()
+        })]
     };
 
     private static void TryDeleteValue(string keyPath, string valueName)

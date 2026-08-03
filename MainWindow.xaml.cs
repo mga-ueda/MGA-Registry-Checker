@@ -15,9 +15,8 @@ namespace MgaRegistryChecker;
 public partial class MainWindow : Window
 {
     private readonly SnapshotStore _store = new();
-    private readonly RegistrySnapshotService _registry = new();
     private readonly DiffSession _diffSession;
-    private AppState _state = new();
+    private readonly AppState _state = new();
     private readonly ObservableCollection<WatchedLocationItem> _items = [];
     private bool _startupChecked;
     private bool _inputValid;
@@ -29,8 +28,8 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-        var apply = new DiffApplyService(_registry, _store);
-        _diffSession = new DiffSession(_registry, apply, new WpfDiffPresenter());
+        var apply = new DiffApplyService(_store);
+        _diffSession = new DiffSession(apply, new WpfDiffPresenter());
         Title = UiText.MainWindowTitle(GetAppVersion());
         LocationList.ItemsSource = _items;
         OkBrush.Freeze();
@@ -177,7 +176,7 @@ public partial class MainWindow : Window
                 ValueName = valueName,
                 CapturedAt = DateTime.Now
             };
-            location.Keys = _registry.Capture(location);
+            location.Keys = RegistrySnapshotService.Capture(location);
             _state.Locations.Add(location);
             SaveState();
 
@@ -233,7 +232,7 @@ public partial class MainWindow : Window
         var loc = _state.Locations.First(l => l.Id == item.Id);
         try
         {
-            loc.Keys = _registry.Capture(loc);
+            loc.Keys = RegistrySnapshotService.Capture(loc);
             loc.CapturedAt = DateTime.Now;
             SaveState();
             StatusText.Text = UiText.StatusRecaptured(item.DisplayPath);
@@ -264,7 +263,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        CheckLocations(_state.Locations.ToList());
+        CheckLocations([.. _state.Locations]);
     }
 
     private void CheckLocations(IReadOnlyList<WatchedLocation> locations)

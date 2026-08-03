@@ -2,30 +2,19 @@ using MgaRegistryChecker.Models;
 
 namespace MgaRegistryChecker.ViewModels;
 
-public sealed class WatchedLocationItem
+public sealed class WatchedLocationItem(WatchedLocation location)
 {
-    public WatchedLocationItem(WatchedLocation location)
+    public Guid Id { get; } = location.Id;
+    public string DisplayPath { get; } = UiText.FormatWatchPath(location);
+    public string ModeLabel { get; } = location.Mode switch
     {
-        Id = location.Id;
-        DisplayPath = location.Mode == WatchMode.SingleValue
-            ? UiText.SingleValueDisplayPath(location.Path, location.ValueName)
-            : location.Path;
-        ModeLabel = location.Mode switch
-        {
-            WatchMode.Recursive => UiText.ModeRecursive,
-            WatchMode.KeyOnly => UiText.ModeKeyOnly,
-            WatchMode.SingleValue => UiText.ModeSingleValue,
-            _ => location.Mode.ToString()
-        };
-        KeyCount = location.Mode == WatchMode.SingleValue
+        WatchMode.Recursive => UiText.ModeRecursive,
+        WatchMode.KeyOnly => UiText.ModeKeyOnly,
+        WatchMode.SingleValue => UiText.ModeSingleValue,
+        _ => location.Mode.ToString()
+    };
+    public string KeyCount { get; } = location.Mode == WatchMode.SingleValue
             ? UiText.CountOneValue
             : UiText.CountKeys(location.Keys.Count);
-        CapturedAtText = location.CapturedAt.ToString("yyyy/MM/dd HH:mm");
-    }
-
-    public Guid Id { get; }
-    public string DisplayPath { get; }
-    public string ModeLabel { get; }
-    public string KeyCount { get; }
-    public string CapturedAtText { get; }
+    public string CapturedAtText { get; } = location.CapturedAt.ToString("yyyy/MM/dd HH:mm");
 }

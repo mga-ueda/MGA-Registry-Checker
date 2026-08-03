@@ -30,11 +30,11 @@ public static class RegistryValueCodec
         return kind switch
         {
             RegistryValueKind.String or RegistryValueKind.ExpandString => data,
-            RegistryValueKind.MultiString => data.Length == 0 ? Array.Empty<string>() : data.Split('\n'),
+            RegistryValueKind.MultiString => data.Length == 0 ? [] : data.Split('\n'),
             RegistryValueKind.DWord => uint.Parse(data),
             RegistryValueKind.QWord => ulong.Parse(data),
             RegistryValueKind.Binary or RegistryValueKind.None =>
-                data.Length == 0 ? Array.Empty<byte>() : Convert.FromBase64String(data),
+                data.Length == 0 ? [] : Convert.FromBase64String(data),
             _ => Convert.FromBase64String(data)
         };
     }

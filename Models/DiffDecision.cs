@@ -17,6 +17,8 @@ public enum DiffItemAction
 
 public sealed class DiffItemChoice
 {
+    /// <summary>この差分が属する監視場所の Id。</summary>
+    public required Guid LocationId { get; init; }
     public required DiffChange Change { get; init; }
     public DiffItemAction Action { get; init; }
 }

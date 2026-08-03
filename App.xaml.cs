@@ -31,13 +31,12 @@ public partial class App : Application
         try
         {
             var store = new SnapshotStore();
-            var registry = new RegistrySnapshotService();
-            var apply = new DiffApplyService(registry, store);
-            var session = new DiffSession(registry, apply, new WpfDiffPresenter());
+            var apply = new DiffApplyService(store);
+            var session = new DiffSession(apply, new WpfDiffPresenter());
             var state = store.Load();
             var result = session.Process(
                 state,
-                state.Locations.ToList(),
+                [.. state.Locations],
                 ownerWindow: null,
                 setStatus: null,
                 silent: true);

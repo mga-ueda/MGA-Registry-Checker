@@ -4,21 +4,12 @@ using MgaRegistryChecker.Models;
 namespace MgaRegistryChecker.Services;
 
 /// <summary>監視場所の差分比較と、差分ダイアログ結果の適用オーケストレーション。</summary>
-public sealed class DiffSession
+public sealed class DiffSession(
+    DiffApplyService apply,
+    IDiffPresenter presenter)
 {
-    private readonly RegistrySnapshotService _registry;
-    private readonly DiffApplyService _apply;
-    private readonly IDiffPresenter _presenter;
-
-    public DiffSession(
-        RegistrySnapshotService registry,
-        DiffApplyService apply,
-        IDiffPresenter presenter)
-    {
-        _registry = registry;
-        _apply = apply;
-        _presenter = presenter;
-    }
+    private readonly DiffApplyService _apply = apply;
+    private readonly IDiffPresenter _presenter = presenter;
 
     public sealed class ProcessResult
     {
@@ -41,52 +32,65 @@ public sealed class DiffSession
             return new ProcessResult();
         }
 
-        var anyDiff = false;
+        var diffs = new List<LocationDiff>();
         var hadErrors = false;
 
         foreach (var loc in locations)
         {
-            LocationDiff diff;
             try
             {
                 if (!silent)
                     setStatus?.Invoke(UiText.StatusChecking(loc.Path));
-                diff = _registry.Compare(loc);
+                var diff = RegistrySnapshotService.Compare(loc);
+                if (diff.Changes.Count > 0)
+                    diffs.Add(diff);
             }
             catch (Exception ex)
             {
                 hadErrors = true;
                 AppDialog.Error(ownerWindow, UiText.MsgCompareFailed(loc.Path, ex.Message));
-                continue;
             }
-
-            if (diff.Changes.Count == 0)
-                continue;
-
-            anyDiff = true;
-            var result = _presenter.Show(
-                diff,
-                ownerWindow,
-                tryCommit: dialogResult => TryCommit(state, diff, dialogResult, ownerWindow));
-
-            UpdateStatusAfterDecision(result, loc.Path, setStatus, silent);
         }
 
-        if (!anyDiff && !silent)
-            setStatus?.Invoke(UiText.StatusNoDifferences);
+        if (diffs.Count == 0)
+        {
+            if (!silent && !hadErrors)
+                setStatus?.Invoke(UiText.StatusNoDifferences);
+            return new ProcessResult { HadErrors = hadErrors };
+        }
+
+        var result = _presenter.Show(
+            diffs,
+            ownerWindow,
+            tryCommit: dialogResult => TryCommit(state, diffs, dialogResult, ownerWindow));
+
+        UpdateStatusAfterDecision(result, diffs, setStatus, silent);
 
         return new ProcessResult
         {
-            AnyDifferences = anyDiff,
+            AnyDifferences = true,
             HadErrors = hadErrors
         };
     }
 
-    private bool TryCommit(AppState state, LocationDiff diff, DiffDialogResult result, Window? owner)
+    private bool TryCommit(
+        AppState state,
+        IReadOnlyList<LocationDiff> diffs,
+        DiffDialogResult result,
+        Window? owner)
     {
+        if (result.Decision == DiffDecision.Cancel)
+            return true;
+
         try
         {
-            _apply.ApplyRegistryWrites(diff, result);
+            foreach (var diff in diffs)
+            {
+                var sliced = DiffApplyService.SliceForLocation(result, diff);
+                if (sliced.Items.Count == 0 || sliced.Decision == DiffDecision.Cancel)
+                    continue;
+                DiffApplyService.ApplyRegistryWrites(diff, sliced);
+            }
         }
         catch (Exception ex)
         {
@@ -96,7 +100,15 @@ public sealed class DiffSession
 
         try
         {
-            _apply.ApplySnapshotUpdate(state, diff, result);
+            foreach (var diff in diffs)
+            {
+                var sliced = DiffApplyService.SliceForLocation(result, diff);
+                if (sliced.Items.Count == 0 || sliced.Decision == DiffDecision.Cancel)
+                    continue;
+                _apply.ApplySnapshotUpdate(state, diff, sliced, save: false);
+            }
+
+            _apply.Save(state);
         }
         catch (Exception ex)
         {
@@ -121,29 +133,46 @@ public sealed class DiffSession
 
     private static void UpdateStatusAfterDecision(
         DiffDialogResult result,
-        string path,
+        List<LocationDiff> diffs,
         Action<string>? setStatus,
         bool silent)
     {
         if (silent || setStatus is null)
             return;
 
+        var watchCount = diffs.Count;
+        var changeCount = diffs.Sum(d => d.Changes.Count);
+        var singlePath = watchCount == 1
+            ? UiText.FormatWatchPath(diffs[0].Location)
+            : null;
+
         switch (result.Decision)
         {
             case DiffDecision.Accept:
-                setStatus(UiText.StatusAccepted(path));
+                setStatus(singlePath is not null
+                    ? UiText.StatusAccepted(singlePath)
+                    : UiText.StatusAcceptedMulti(watchCount, changeCount));
                 break;
             case DiffDecision.Revert:
-                setStatus(UiText.StatusReverted(path));
+                setStatus(singlePath is not null
+                    ? UiText.StatusReverted(singlePath)
+                    : UiText.StatusRevertedMulti(watchCount, changeCount));
                 break;
             case DiffDecision.Mixed:
-                setStatus(UiText.StatusMixedApplied(
-                    path,
-                    result.Items.Count(x => x.Action == DiffItemAction.Accept),
-                    result.Items.Count(x => x.Action == DiffItemAction.Revert)));
+                setStatus(singlePath is not null
+                    ? UiText.StatusMixedApplied(
+                        singlePath,
+                        result.Items.Count(x => x.Action == DiffItemAction.Accept),
+                        result.Items.Count(x => x.Action == DiffItemAction.Revert))
+                    : UiText.StatusMixedAppliedMulti(
+                        watchCount,
+                        result.Items.Count(x => x.Action == DiffItemAction.Accept),
+                        result.Items.Count(x => x.Action == DiffItemAction.Revert)));
                 break;
             default:
-                setStatus(UiText.StatusSkipped(path));
+                setStatus(singlePath is not null
+                    ? UiText.StatusSkipped(singlePath)
+                    : UiText.StatusSkippedMulti(watchCount, changeCount));
                 break;
         }
     }

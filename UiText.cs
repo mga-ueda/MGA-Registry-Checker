@@ -128,11 +128,16 @@ public static class UiText
     public static string DiffDetected(string path) =>
         $"変更を検出: {path}";
 
+    public static string DiffDetectedMulti(int watchCount) =>
+        $"変更を検出: {watchCount} 件の監視場所";
+
     public static string DiffDetectedSim(string path) =>
         $"[SIM] 変更を検出: {path}";
 
-    public static string DiffSubText(int count) =>
-        $"{count} 件の差異があります。全行を ACCEPT（青）または REVERT（赤）に設定すると APPLY が有効になります。見出しで全選択可。CANCEL は何もせず閉じます（次回も通知されます）。";
+    public static string DiffSubText(int changeCount, int watchCount = 1) =>
+        watchCount <= 1
+            ? $"{changeCount} 件の差異があります。全行を ACCEPT（青）または REVERT（赤）に設定すると APPLY が有効になります。見出しで全選択可。CANCEL は何もせず閉じます（次回も通知されます）。"
+            : $"{watchCount} 監視場所 / {changeCount} 件の差異があります。全行を ACCEPT（青）または REVERT（赤）に設定すると APPLY が有効になります。見出しで全選択可。CANCEL は何もせず閉じます（次回も通知されます）。";
 
     public static string DiffSubTextSim(int count) =>
         $"{count} 件の擬似差分です。全行を ACCEPT（青）または REVERT（赤）に設定すると APPLY が有効になります。見出しで全選択可。CANCEL は常に有効です。実レジストリ・保存データは変わりません。";
@@ -205,14 +210,31 @@ public static class UiText
     public static string StatusAccepted(string path) =>
         $"受け入れました: {path}";
 
+    public static string StatusAcceptedMulti(int watchCount, int changeCount) =>
+        $"受け入れました: {watchCount} 監視 / {changeCount} 件";
+
     public static string StatusReverted(string path) =>
         $"元に戻しました: {path}";
+
+    public static string StatusRevertedMulti(int watchCount, int changeCount) =>
+        $"元に戻しました: {watchCount} 監視 / {changeCount} 件";
 
     public static string StatusMixedApplied(string path, int acceptCount, int revertCount) =>
         $"個別適用しました: {path}（ACCEPT {acceptCount} / REVERT {revertCount}）";
 
+    public static string StatusMixedAppliedMulti(int watchCount, int acceptCount, int revertCount) =>
+        $"個別適用しました: {watchCount} 監視（ACCEPT {acceptCount} / REVERT {revertCount}）";
+
     public static string StatusSkipped(string path) =>
         $"スキップしました: {path}";
+
+    public static string StatusSkippedMulti(int watchCount, int changeCount) =>
+        $"スキップしました: {watchCount} 監視 / {changeCount} 件";
+
+    public static string FormatWatchPath(Models.WatchedLocation location) =>
+        location.Mode == Models.WatchMode.SingleValue
+            ? SingleValueDisplayPath(location.Path, location.ValueName)
+            : location.Path;
 
     public static string StatusSimAcceptAll(int count) =>
         $"シミュレート: ACCEPT ALL（未変更） / {count} 件";
