@@ -45,6 +45,19 @@ public sealed class WatchedLocation
 public sealed class AppState
 {
     public List<WatchedLocation> Locations { get; set; } = [];
+
+    /// <summary>設定（監視追加）用メインウィンドウの位置・サイズ。差分ダイアログは保存しない。</summary>
+    public WindowBounds? MainWindowBounds { get; set; }
+}
+
+/// <summary>ウィンドウの位置とサイズ。</summary>
+public sealed class WindowBounds
+{
+    public double Left { get; set; }
+    public double Top { get; set; }
+    public double Width { get; set; }
+    public double Height { get; set; }
+    public bool IsMaximized { get; set; }
 }
 
 public sealed class DiffChange
@@ -56,18 +69,6 @@ public sealed class DiffChange
     public string? NewValue { get; set; }
     public string? OldKind { get; set; }
     public string? NewKind { get; set; }
-
-    public string Summary => Kind switch
-    {
-        DiffChangeKind.KeyAdded => $"[Key added] {KeyPath}",
-        DiffChangeKind.KeyRemoved => $"[Key removed] {KeyPath}",
-        DiffChangeKind.ValueAdded => $"[Value added] {KeyPath}\\{DisplayName} = {NewValue} ({NewKind})",
-        DiffChangeKind.ValueRemoved => $"[Value removed] {KeyPath}\\{DisplayName} = {OldValue} ({OldKind})",
-        DiffChangeKind.ValueModified => $"[Value changed] {KeyPath}\\{DisplayName}\n  Old: {OldValue} ({OldKind})\n  New: {NewValue} ({NewKind})",
-        _ => KeyPath
-    };
-
-    private string DisplayName => string.IsNullOrEmpty(ValueName) ? "(Default)" : ValueName;
 }
 
 public sealed class LocationDiff

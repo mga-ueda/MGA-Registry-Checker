@@ -3,10 +3,9 @@ using MGA_RegistryChecker.Models;
 
 namespace MGA_RegistryChecker.Services;
 
-/// <summary>DEBUG 用: 実レジストリを触れない擬似データ／差分を生成する。</summary>
+/// <summary>DEBUG 用: 実レジストリを触れない擬似差分を生成する。</summary>
 public static class DiffSimulator
 {
-    private const int DemoWatchCount = 20;
     private const int DemoChangeCount = 20;
 
     private static readonly string[] SampleRoots =
@@ -28,55 +27,6 @@ public static class DiffSimulator
         "LastUpdate", "Version", "Locale", "ThemeColor", "AutoCheck",
         "CacheSize", "MaxItems", "LogLevel", "Endpoint", "FeatureToggle"
     ];
-
-    /// <summary>監視リスト UI 確認用の擬似監視項目（約 20 件）。</summary>
-    public static List<WatchedLocation> CreateDemoLocations(int count = DemoWatchCount)
-    {
-        var list = new List<WatchedLocation>(count);
-        var now = DateTime.Now;
-
-        for (var i = 0; i < count; i++)
-        {
-            var root = SampleRoots[i % SampleRoots.Length];
-            var single = i % 3 == 2;
-            var path = single
-                ? root
-                : $"{root}\\Item{i + 1:D2}";
-            var valueName = single ? SampleValues[i % SampleValues.Length] : null;
-
-            list.Add(new WatchedLocation
-            {
-                Path = path,
-                Mode = single ? WatchMode.SingleValue : WatchMode.KeyOnly,
-                ValueName = valueName,
-                CapturedAt = now.AddMinutes(-(count - i) * 7),
-                Keys =
-                [
-                    new RegistryKeySnapshot
-                    {
-                        Path = path,
-                        Values =
-                        [
-                            new RegistryValueData
-                            {
-                                Name = valueName ?? "Baseline",
-                                Kind = RegistryValueKind.String,
-                                Data = $"demo-snapshot-{i + 1:D2}"
-                            },
-                            new RegistryValueData
-                            {
-                                Name = "Stamp",
-                                Kind = RegistryValueKind.DWord,
-                                Data = (1000 + i).ToString()
-                            }
-                        ]
-                    }
-                ]
-            });
-        }
-
-        return list;
-    }
 
     /// <summary>差分ダイアログ UI 確認用の擬似差分（約 20 件）。</summary>
     public static LocationDiff CreateRandom(IReadOnlyList<WatchedLocation>? existing = null)

@@ -39,7 +39,7 @@ public static class AppDialog
 
     private static void PlaySound(MessageBoxImage icon)
     {
-        // Error==Hand, Warning==Exclamation, Information==Asterisk（同一値）
+        // Error==Hand / Warning==Exclamation / Information==Asterisk（列挙値が同一のものあり）
         // コントロールパネル「プログラム イベント」と同じキーを参照する
         var eventNames = icon switch
         {

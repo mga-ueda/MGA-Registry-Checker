@@ -13,4 +13,5 @@ namespace MGA_RegistryChecker.Services;
 [JsonSerializable(typeof(RegistryKeySnapshot))]
 [JsonSerializable(typeof(RegistryValueData))]
 [JsonSerializable(typeof(RegistryValueKind))]
+[JsonSerializable(typeof(WindowBounds))]
 internal partial class AppJsonContext : JsonSerializerContext;

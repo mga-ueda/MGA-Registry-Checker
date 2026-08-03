@@ -1,38 +1,20 @@
-using System.Collections.ObjectModel;
-using System.ComponentModel;
+﻿using System.Collections.ObjectModel;
 using System.Globalization;
-using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using MGA_RegistryChecker.Models;
 using MGA_RegistryChecker.Services;
+using MGA_RegistryChecker.ViewModels;
 
 namespace MGA_RegistryChecker;
 
 public partial class DiffWindow : Window
 {
-    public enum DiffDecision
-    {
-        Cancel,
-        Accept,
-        Revert,
-        Mixed
-    }
+    public DiffDialogResult Result { get; private set; } = new();
 
-    public enum ItemAction
-    {
-        Ignore,
-        Accept,
-        Revert
-    }
-
-    public DiffDecision Decision { get; private set; } = DiffDecision.Cancel;
-    public IReadOnlyList<(DiffChange Change, ItemAction Action)> ItemResults { get; private set; } = [];
-
-    private readonly LocationDiff _diff;
-    private readonly RegistrySnapshotService _registry = new();
+    private readonly Func<DiffDialogResult, bool>? _tryCommit;
     private readonly bool _simulateOnly;
     private readonly ObservableCollection<DiffItemVm> _items = [];
     private bool _updatingHeaders;
@@ -48,11 +30,18 @@ public partial class DiffWindow : Window
     private bool _paintValue;
     private int _lastPaintedIndex = -1;
 
-    public DiffWindow(LocationDiff diff, bool simulateOnly = false)
+    public DiffWindow(
+        LocationDiff diff,
+        Func<DiffDialogResult, bool>? tryCommit = null,
+        bool simulateOnly = false)
     {
         InitializeComponent();
-        _diff = diff;
+        _tryCommit = tryCommit;
         _simulateOnly = simulateOnly;
+
+        // メインの位置に関係なく、常にプライマリディスプレイ中央
+        SourceInitialized += (_, _) => WindowPlacement.CenterOnPrimary(this);
+        DarkTitleBar.Apply(this);
 
         foreach (var change in diff.Changes)
         {
@@ -93,7 +82,7 @@ public partial class DiffWindow : Window
     {
         ChangeGrid.UpdateLayout();
 
-        // Type / ACCEPT / REVERT は見出しとセルから
+        // Type / ACCEPT / REVERT は見出しとセルから幅を決める
         foreach (var column in new DataGridColumn[] { TypeColumn, AcceptColumn, RevertColumn })
         {
             column.Width = new DataGridLength(1, DataGridLengthUnitType.SizeToHeader);
@@ -111,7 +100,7 @@ public partial class DiffWindow : Window
             column.Width = new DataGridLength(Math.Ceiling(width));
         }
 
-        // Value / Old / New は全行の文字幅を測って切れないようにする
+        // Value / Old / New は文字幅を測り、切れないようにする
         var dpi = VisualTreeHelper.GetDpi(this).PixelsPerDip;
         var typeface = new Typeface(ChangeGrid.FontFamily, FontStyles.Normal, FontWeights.Normal, FontStretches.Normal);
         const double cellPadding = 20;
@@ -128,7 +117,7 @@ public partial class DiffWindow : Window
             MeasureHeader(UiText.ColumnNew, dpi),
             Math.Max(NewColumn.MinWidth, MaxContentWidth(i => i.NewText, typeface, dpi) + cellPadding))));
 
-        // 余った幅は Key に融通（足りなければ横スクロール）
+        // 残り幅を Key に割り当て（必要なら横スクロール）
         KeyColumn.Width = new DataGridLength(1, DataGridLengthUnitType.Star);
     }
 
@@ -170,7 +159,7 @@ public partial class DiffWindow : Window
         if (FindTaggedCheckBox(e.OriginalSource as DependencyObject) is not { } hit)
             return;
 
-        // 見出しチェックは従来どおり（ドラッグ塗り対象外）
+        // 見出しチェックは通常のトグル（ドラッグ塗り対象外）
         if (hit.CheckBox == AcceptHeaderCheck || hit.CheckBox == RevertHeaderCheck)
             return;
 
@@ -203,7 +192,7 @@ public partial class DiffWindow : Window
             return;
         }
 
-        // キャプチャ中は OriginalSource がグリッド側になることがあるため、座標から行を拾う
+        // チェック以外のセル上では、座標から行を特定する
         if (FindRowItemUnder(e.GetPosition(ChangeGrid)) is { } rowItem)
             PaintThrough(rowItem);
     }
@@ -235,7 +224,7 @@ public partial class DiffWindow : Window
             return;
         }
 
-        // 高速ドラッグで行を飛ばしても、直前行〜現在行の間を塗る
+        // 高速ドラッグで行を飛ばしても、直前〜現在の間をすべて塗る
         var from = Math.Min(_lastPaintedIndex, index);
         var to = Math.Max(_lastPaintedIndex, index);
         for (var i = from; i <= to; i++)
@@ -249,16 +238,16 @@ public partial class DiffWindow : Window
         if (_paintColumn == PaintColumn.Accept)
         {
             if (_paintValue)
-                item.Action = ItemAction.Accept;
-            else if (item.Action == ItemAction.Accept)
-                item.Action = ItemAction.Ignore;
+                item.Action = DiffItemAction.Accept;
+            else if (item.Action == DiffItemAction.Accept)
+                item.Action = DiffItemAction.Ignore;
         }
         else if (_paintColumn == PaintColumn.Revert)
         {
             if (_paintValue)
-                item.Action = ItemAction.Revert;
-            else if (item.Action == ItemAction.Revert)
-                item.Action = ItemAction.Ignore;
+                item.Action = DiffItemAction.Revert;
+            else if (item.Action == DiffItemAction.Revert)
+                item.Action = DiffItemAction.Ignore;
         }
     }
 
@@ -292,7 +281,7 @@ public partial class DiffWindow : Window
     private void UpdateApplyEnabled()
     {
         ApplyButton.IsEnabled = _items.Count > 0
-            && _items.All(i => i.Action is ItemAction.Accept or ItemAction.Revert);
+            && _items.All(i => i.Action is DiffItemAction.Accept or DiffItemAction.Revert);
     }
 
     private DiffItemVm? FindRowItemUnder(Point position)
@@ -338,12 +327,12 @@ public partial class DiffWindow : Window
             {
                 RevertHeaderCheck.IsChecked = false;
                 foreach (var item in _items)
-                    item.Action = ItemAction.Accept;
+                    item.Action = DiffItemAction.Accept;
             }
             else
             {
-                foreach (var item in _items.Where(i => i.Action == ItemAction.Accept))
-                    item.Action = ItemAction.Ignore;
+                foreach (var item in _items.Where(i => i.Action == DiffItemAction.Accept))
+                    item.Action = DiffItemAction.Ignore;
             }
         }
         finally
@@ -365,12 +354,12 @@ public partial class DiffWindow : Window
             {
                 AcceptHeaderCheck.IsChecked = false;
                 foreach (var item in _items)
-                    item.Action = ItemAction.Revert;
+                    item.Action = DiffItemAction.Revert;
             }
             else
             {
-                foreach (var item in _items.Where(i => i.Action == ItemAction.Revert))
-                    item.Action = ItemAction.Ignore;
+                foreach (var item in _items.Where(i => i.Action == DiffItemAction.Revert))
+                    item.Action = DiffItemAction.Ignore;
             }
         }
         finally
@@ -382,15 +371,15 @@ public partial class DiffWindow : Window
 
     private void Apply_Click(object sender, RoutedEventArgs e)
     {
-        if (!_items.All(i => i.Action is ItemAction.Accept or ItemAction.Revert))
+        if (!_items.All(i => i.Action is DiffItemAction.Accept or DiffItemAction.Revert))
             return;
 
         var distinct = _items.Select(i => i.Action).Distinct().ToList();
         var decision = distinct.Count == 1
             ? distinct[0] switch
             {
-                ItemAction.Accept => DiffDecision.Accept,
-                ItemAction.Revert => DiffDecision.Revert,
+                DiffItemAction.Accept => DiffDecision.Accept,
+                DiffItemAction.Revert => DiffDecision.Revert,
                 _ => DiffDecision.Cancel
             }
             : DiffDecision.Mixed;
@@ -400,151 +389,48 @@ public partial class DiffWindow : Window
 
     private void Cancel_Click(object sender, RoutedEventArgs e)
     {
-        Decision = DiffDecision.Cancel;
-        ItemResults = [];
+        Result = new DiffDialogResult { Decision = DiffDecision.Cancel };
         DialogResult = false;
         Close();
     }
 
     private void Finish(DiffDecision decision)
     {
-        ItemResults = _items.Select(i => (i.Change, i.Action)).ToList();
+        var dialogResult = new DiffDialogResult
+        {
+            Decision = decision,
+            Items = _items.Select(i => new DiffItemChoice
+            {
+                Change = i.Change,
+                Action = i.Action
+            }).ToList()
+        };
 
         if (_simulateOnly)
         {
-            Decision = decision;
+            Result = dialogResult;
             DialogResult = true;
             Close();
             return;
         }
 
-        try
-        {
-            if (decision == DiffDecision.Revert)
-            {
-                _registry.Revert(_diff.Location);
-            }
-            else if (decision == DiffDecision.Mixed)
-            {
-                var toRevert = ItemResults
-                    .Where(x => x.Action == ItemAction.Revert)
-                    .Select(x => x.Change)
-                    .ToList();
-                if (toRevert.Count > 0)
-                    _registry.RevertChanges(_diff.Location, toRevert);
-            }
+        if (_tryCommit is not null && !_tryCommit(dialogResult))
+            return;
 
-            Decision = decision;
-            DialogResult = true;
-            Close();
-        }
-        catch (Exception ex)
-        {
-            AppDialog.Error(this, UiText.MsgRestoreFailed(ex.Message), UiText.TitleRestoreError);
-        }
+        Result = dialogResult;
+        DialogResult = true;
+        Close();
     }
 
     private void Window_OnPreviewKeyDown(object sender, KeyEventArgs e)
     {
         if (e.Key == Key.Escape)
         {
-            Decision = DiffDecision.Cancel;
+            Result = new DiffDialogResult { Decision = DiffDecision.Cancel };
             DialogResult = false;
             Close();
             e.Handled = true;
         }
     }
-
-    public sealed class DiffItemVm : INotifyPropertyChanged
-    {
-        private ItemAction _action = ItemAction.Ignore;
-        private bool _updatingChecks;
-
-        public DiffItemVm(DiffChange change)
-        {
-            Change = change;
-            KindLabel = change.Kind switch
-            {
-                DiffChangeKind.KeyAdded => UiText.KindKeyAdded,
-                DiffChangeKind.KeyRemoved => UiText.KindKeyRemoved,
-                DiffChangeKind.ValueAdded => UiText.KindValueAdded,
-                DiffChangeKind.ValueRemoved => UiText.KindValueRemoved,
-                DiffChangeKind.ValueModified => UiText.KindValueModified,
-                _ => UiText.KindUnknown
-            };
-            KindBrush = change.Kind switch
-            {
-                DiffChangeKind.KeyAdded or DiffChangeKind.ValueAdded =>
-                    new SolidColorBrush(Color.FromRgb(0x2E, 0xC4, 0xB6)),
-                DiffChangeKind.KeyRemoved or DiffChangeKind.ValueRemoved =>
-                    new SolidColorBrush(Color.FromRgb(0xD9, 0x30, 0x25)),
-                DiffChangeKind.ValueModified =>
-                    new SolidColorBrush(Color.FromRgb(0xE6, 0xA2, 0x3C)),
-                _ => Brushes.White
-            };
-            KindBrush.Freeze();
-            KeyPath = change.KeyPath;
-            ValueName = change.Kind is DiffChangeKind.KeyAdded or DiffChangeKind.KeyRemoved
-                ? ""
-                : DisplayName(change.ValueName);
-            OldText = change.OldValue ?? "";
-            NewText = change.NewValue ?? "";
-        }
-
-        public DiffChange Change { get; }
-        public string KindLabel { get; }
-        public Brush KindBrush { get; }
-        public string KeyPath { get; }
-        public string ValueName { get; }
-        public string OldText { get; }
-        public string NewText { get; }
-
-        public ItemAction Action
-        {
-            get => _action;
-            set
-            {
-                if (_action == value)
-                    return;
-                _action = value;
-                OnPropertyChanged();
-                if (_updatingChecks)
-                    return;
-                _updatingChecks = true;
-                OnPropertyChanged(nameof(IsAccept));
-                OnPropertyChanged(nameof(IsRevert));
-                _updatingChecks = false;
-            }
-        }
-
-        public bool IsAccept
-        {
-            get => Action == ItemAction.Accept;
-            set
-            {
-                if (_updatingChecks)
-                    return;
-                Action = value ? ItemAction.Accept : ItemAction.Ignore;
-            }
-        }
-
-        public bool IsRevert
-        {
-            get => Action == ItemAction.Revert;
-            set
-            {
-                if (_updatingChecks)
-                    return;
-                Action = value ? ItemAction.Revert : ItemAction.Ignore;
-            }
-        }
-
-        public event PropertyChangedEventHandler? PropertyChanged;
-
-        private void OnPropertyChanged([CallerMemberName] string? name = null) =>
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
-
-        private static string DisplayName(string? name) =>
-            UiText.DisplayValueLabel(name);
-    }
 }
+

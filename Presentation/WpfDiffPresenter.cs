@@ -1,0 +1,23 @@
+using System.Windows;
+using MGA_RegistryChecker.Models;
+using MGA_RegistryChecker.Services;
+
+namespace MGA_RegistryChecker.Presentation;
+
+public sealed class WpfDiffPresenter : IDiffPresenter
+{
+    public DiffDialogResult Show(
+        LocationDiff diff,
+        object? ownerWindow,
+        Func<DiffDialogResult, bool>? tryCommit = null,
+        bool simulateOnly = false)
+    {
+        var dlg = new DiffWindow(diff, tryCommit, simulateOnly);
+        // Owner は前面表示のためだけ。位置は DiffWindow 側でプライマリ中央に固定する。
+        if (ownerWindow is Window owner)
+            dlg.Owner = owner;
+
+        dlg.ShowDialog();
+        return dlg.Result;
+    }
+}

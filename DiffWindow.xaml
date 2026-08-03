@@ -6,7 +6,7 @@
         Icon="pack://application:,,,/Assets/app.ico"
         Height="560" Width="980"
         MinHeight="400" MinWidth="760"
-        WindowStartupLocation="CenterOwner"
+        WindowStartupLocation="Manual"
         Background="{StaticResource BgBrush}"
         Foreground="{StaticResource FgBrush}"
         PreviewKeyDown="Window_OnPreviewKeyDown"

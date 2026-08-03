@@ -1,11 +1,14 @@
 ﻿using System.Collections.ObjectModel;
+using System.IO;
 using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using MGA_RegistryChecker.Models;
+using MGA_RegistryChecker.Presentation;
 using MGA_RegistryChecker.Services;
+using MGA_RegistryChecker.ViewModels;
 
 namespace MGA_RegistryChecker;
 
@@ -13,9 +16,9 @@ public partial class MainWindow : Window
 {
     private readonly SnapshotStore _store = new();
     private readonly RegistrySnapshotService _registry = new();
-    private readonly WatchDiffProcessor _diffProcessor;
+    private readonly DiffSession _diffSession;
     private AppState _state = new();
-    private readonly ObservableCollection<LocationItem> _items = [];
+    private readonly ObservableCollection<WatchedLocationItem> _items = [];
     private bool _startupChecked;
     private bool _inputValid;
 
@@ -26,13 +29,19 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-        _diffProcessor = new WatchDiffProcessor(_registry, _store);
+        var apply = new DiffApplyService(_registry, _store);
+        _diffSession = new DiffSession(_registry, apply, new WpfDiffPresenter());
         Title = UiText.MainWindowTitle(GetAppVersion());
         LocationList.ItemsSource = _items;
         OkBrush.Freeze();
         NgBrush.Freeze();
         MutedBrush.Freeze();
         UpdateSelectionActions();
+        DarkTitleBar.Apply(this);
+
+        // 位置復元は表示前に行う（初回は画面中央）
+        _state = _store.Load();
+        WindowPlacement.Apply(this, _state.MainWindowBounds);
     }
 
     private static string GetAppVersion()
@@ -41,8 +50,7 @@ public partial class MainWindow : Window
         var info = asm.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
         if (!string.IsNullOrWhiteSpace(info))
         {
-            // ビルドメタデータ (+hash 等) があれば除去
-            var plus = info.IndexOf('+');
+            var plus = info.IndexOf('+', StringComparison.Ordinal);
             return plus >= 0 ? info[..plus] : info;
         }
 
@@ -52,7 +60,9 @@ public partial class MainWindow : Window
 
     private void Window_OnLoaded(object sender, RoutedEventArgs e)
     {
-        LoadState();
+        // コンストラクタで読んだ状態を一覧へ反映（再読込で位置設定を上書きしない）
+        RefreshList();
+        StatusText.Text = UiText.StatusStateFile(_store.FilePath);
 #if DEBUG
         if (SimulateDiffButton is not null)
             SimulateDiffButton.Visibility = Visibility.Visible;
@@ -67,19 +77,34 @@ public partial class MainWindow : Window
         Dispatcher.BeginInvoke(CheckAllDifferences, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
     }
 
-    private void LoadState()
+    private void Window_OnClosing(object sender, System.ComponentModel.CancelEventArgs e)
     {
-        _state = _store.Load();
-        RefreshList();
-        StatusText.Text = UiText.StatusStateFile(_store.FilePath);
+        try
+        {
+            PersistMainWindowBounds();
+        }
+        catch (IOException)
+        {
+            // 終了時の保存失敗は握りつぶす
+        }
+        catch (UnauthorizedAccessException)
+        {
+            // 終了時の保存失敗は握りつぶす
+        }
+    }
+
+    private void PersistMainWindowBounds()
+    {
+        _state.MainWindowBounds = WindowPlacement.Capture(this);
+        _store.Save(_state);
     }
 
     private void RefreshList()
     {
-        var selectedId = (LocationList.SelectedItem as LocationItem)?.Id;
+        var selectedId = (LocationList.SelectedItem as WatchedLocationItem)?.Id;
         _items.Clear();
         foreach (var loc in _state.Locations.OrderBy(l => l.Path, StringComparer.OrdinalIgnoreCase))
-            _items.Add(new LocationItem(loc));
+            _items.Add(new WatchedLocationItem(loc));
         EmptyHint.Visibility = _items.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
 
         if (selectedId is Guid id)
@@ -90,6 +115,7 @@ public partial class MainWindow : Window
 
     private void SaveState()
     {
+        _state.MainWindowBounds = WindowPlacement.Capture(this);
         _store.Save(_state);
         RefreshList();
     }
@@ -101,18 +127,13 @@ public partial class MainWindow : Window
         if (ValidationMessage is null || AddButton is null)
             return;
 
-        var path = PathBox.Text.Trim();
-        var valueText = ValueBox.Text;
-        var watchValue = !string.IsNullOrWhiteSpace(valueText);
-        string? valueName = watchValue ? valueText.Trim() : null;
-
-        var result = RegistryPathHelper.Validate(path, valueName);
+        var result = WatchInputValidator.Validate(PathBox.Text, ValueBox.Text);
         _inputValid = result.IsOk;
         AddButton.IsEnabled = result.IsOk;
 
-        if (string.IsNullOrWhiteSpace(path) && !watchValue)
+        if (result.IsIdle)
         {
-            ValidationMessage.Text = UiText.ValidationHintIdle;
+            ValidationMessage.Text = result.Message;
             ValidationMessage.Foreground = MutedBrush;
             AddButton.IsEnabled = false;
             _inputValid = false;
@@ -160,10 +181,9 @@ public partial class MainWindow : Window
             _state.Locations.Add(location);
             SaveState();
 
-            var label = mode == WatchMode.SingleValue
-                ? $"{path} → {valueName}"
-                : $"{path}（{location.Keys.Count} キー）";
-            StatusText.Text = UiText.StatusAdded(label);
+            StatusText.Text = mode == WatchMode.SingleValue
+                ? UiText.StatusAddedSingleValue(path, valueName)
+                : UiText.StatusAddedKeyOnly(path, location.Keys.Count);
             PathBox.Clear();
             ValueBox.Clear();
             ValidateInput();
@@ -177,7 +197,7 @@ public partial class MainWindow : Window
 
     private void Remove_Click(object sender, RoutedEventArgs e)
     {
-        if (LocationList.SelectedItem is not LocationItem item)
+        if (LocationList.SelectedItem is not WatchedLocationItem item)
             return;
 
         var result = AppDialog.Confirm(this, UiText.MsgConfirmStopWatch(item.DisplayPath));
@@ -189,7 +209,6 @@ public partial class MainWindow : Window
         SaveState();
         StatusText.Text = UiText.StatusRemoved(item.DisplayPath);
 
-        // 次の行（末尾なら前の行）を選択し、続けて Del できるようにする
         if (_items.Count > 0)
         {
             var nextIndex = Math.Clamp(index, 0, _items.Count - 1);
@@ -208,7 +227,7 @@ public partial class MainWindow : Window
 
     private void Recapture_Click(object sender, RoutedEventArgs e)
     {
-        if (LocationList.SelectedItem is not LocationItem item)
+        if (LocationList.SelectedItem is not WatchedLocationItem item)
             return;
 
         var loc = _state.Locations.First(l => l.Id == item.Id);
@@ -227,7 +246,7 @@ public partial class MainWindow : Window
 
     private void CheckNow_Click(object sender, RoutedEventArgs e)
     {
-        if (LocationList.SelectedItem is not LocationItem item)
+        if (LocationList.SelectedItem is not WatchedLocationItem item)
             return;
 
         var loc = _state.Locations.FirstOrDefault(l => l.Id == item.Id);
@@ -250,10 +269,10 @@ public partial class MainWindow : Window
 
     private void CheckLocations(IReadOnlyList<WatchedLocation> locations)
     {
-        _diffProcessor.Process(
+        _diffSession.Process(
             _state,
             locations,
-            owner: this,
+            ownerWindow: this,
             setStatus: text => StatusText.Text = text,
             silent: false);
         RefreshList();
@@ -321,7 +340,6 @@ public partial class MainWindow : Window
 
         if (e.Key == Key.Delete)
         {
-            // 入力欄での文字削除は通常どおり
             if (Keyboard.FocusedElement is TextBox)
                 return;
 
@@ -340,43 +358,15 @@ public partial class MainWindow : Window
         var dlg = new DiffWindow(diff, simulateOnly: true) { Owner = this };
         dlg.ShowDialog();
 
-        StatusText.Text = dlg.Decision switch
+        StatusText.Text = dlg.Result.Decision switch
         {
-            DiffWindow.DiffDecision.Accept => UiText.StatusSimAcceptAll(diff.Changes.Count),
-            DiffWindow.DiffDecision.Revert => UiText.StatusSimRevertAll(diff.Changes.Count),
-            DiffWindow.DiffDecision.Mixed => UiText.StatusSimMixed(
-                dlg.ItemResults.Count(x => x.Action == DiffWindow.ItemAction.Accept),
-                dlg.ItemResults.Count(x => x.Action == DiffWindow.ItemAction.Revert)),
+            DiffDecision.Accept => UiText.StatusSimAcceptAll(diff.Changes.Count),
+            DiffDecision.Revert => UiText.StatusSimRevertAll(diff.Changes.Count),
+            DiffDecision.Mixed => UiText.StatusSimMixed(
+                dlg.Result.Items.Count(x => x.Action == DiffItemAction.Accept),
+                dlg.Result.Items.Count(x => x.Action == DiffItemAction.Revert)),
             _ => UiText.StatusSimCancel(diff.Changes.Count)
         };
 #endif
-    }
-
-    private sealed class LocationItem
-    {
-        public LocationItem(WatchedLocation location)
-        {
-            Id = location.Id;
-            DisplayPath = location.Mode == WatchMode.SingleValue
-                ? UiText.SingleValueDisplayPath(location.Path, location.ValueName)
-                : location.Path;
-            ModeLabel = location.Mode switch
-            {
-                WatchMode.Recursive => UiText.ModeRecursive,
-                WatchMode.KeyOnly => UiText.ModeKeyOnly,
-                WatchMode.SingleValue => UiText.ModeSingleValue,
-                _ => location.Mode.ToString()
-            };
-            KeyCount = location.Mode == WatchMode.SingleValue
-                ? UiText.CountOneValue
-                : UiText.CountKeys(location.Keys.Count);
-            CapturedAtText = location.CapturedAt.ToString("yyyy/MM/dd HH:mm");
-        }
-
-        public Guid Id { get; }
-        public string DisplayPath { get; }
-        public string ModeLabel { get; }
-        public string KeyCount { get; }
-        public string CapturedAtText { get; }
     }
 }

@@ -1,190 +1,8 @@
 using System.IO;
-using System.Text;
 using Microsoft.Win32;
 using MGA_RegistryChecker.Models;
 
 namespace MGA_RegistryChecker.Services;
-
-public static class RegistryPathHelper
-{
-    private static readonly (string Alias, RegistryHive Hive, string Name)[] Hives =
-    [
-        ("HKEY_CLASSES_ROOT", RegistryHive.ClassesRoot, "HKEY_CLASSES_ROOT"),
-        ("HKCR", RegistryHive.ClassesRoot, "HKEY_CLASSES_ROOT"),
-        ("HKEY_CURRENT_USER", RegistryHive.CurrentUser, "HKEY_CURRENT_USER"),
-        ("HKCU", RegistryHive.CurrentUser, "HKEY_CURRENT_USER"),
-        ("HKEY_LOCAL_MACHINE", RegistryHive.LocalMachine, "HKEY_LOCAL_MACHINE"),
-        ("HKLM", RegistryHive.LocalMachine, "HKEY_LOCAL_MACHINE"),
-        ("HKEY_USERS", RegistryHive.Users, "HKEY_USERS"),
-        ("HKU", RegistryHive.Users, "HKEY_USERS"),
-        ("HKEY_CURRENT_CONFIG", RegistryHive.CurrentConfig, "HKEY_CURRENT_CONFIG"),
-        ("HKCC", RegistryHive.CurrentConfig, "HKEY_CURRENT_CONFIG"),
-    ];
-
-    public static IReadOnlyList<(string Name, RegistryHive Hive)> RootHives { get; } =
-    [
-        ("HKEY_CLASSES_ROOT", RegistryHive.ClassesRoot),
-        ("HKEY_CURRENT_USER", RegistryHive.CurrentUser),
-        ("HKEY_LOCAL_MACHINE", RegistryHive.LocalMachine),
-        ("HKEY_USERS", RegistryHive.Users),
-        ("HKEY_CURRENT_CONFIG", RegistryHive.CurrentConfig),
-    ];
-
-    public static bool TryParse(string path, out RegistryHive hive, out string subKey)
-    {
-        hive = default;
-        subKey = string.Empty;
-        if (string.IsNullOrWhiteSpace(path))
-            return false;
-
-        path = path.Trim().TrimEnd('\\');
-        foreach (var (alias, hiveValue, _) in Hives.OrderByDescending(h => h.Alias.Length))
-        {
-            if (path.Equals(alias, StringComparison.OrdinalIgnoreCase))
-            {
-                hive = hiveValue;
-                subKey = string.Empty;
-                return true;
-            }
-
-            if (path.StartsWith(alias + "\\", StringComparison.OrdinalIgnoreCase))
-            {
-                hive = hiveValue;
-                subKey = path[(alias.Length + 1)..];
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    public static string Normalize(string path)
-    {
-        if (!TryParse(path, out var hive, out var subKey))
-            return path.Trim().TrimEnd('\\');
-
-        var root = RootHives.First(h => h.Hive == hive).Name;
-        return string.IsNullOrEmpty(subKey) ? root : $"{root}\\{subKey}";
-    }
-
-    public static RegistryKey? OpenKey(string path, bool writable = false)
-    {
-        if (!TryParse(path, out var hive, out var subKey))
-            return null;
-
-        var baseKey = RegistryKey.OpenBaseKey(hive, RegistryView.Default);
-        if (string.IsNullOrEmpty(subKey))
-            return baseKey;
-
-        var key = baseKey.OpenSubKey(subKey, writable);
-        if (key is null)
-            baseKey.Dispose();
-        else
-            // Keep baseKey alive via returned key's ownership — dispose base when done with key.
-            // Caller owns the returned key; we dispose baseKey only if open failed.
-            // Actually OpenSubKey doesn't transfer base ownership. Dispose base after we're done.
-            // Better pattern: return key and let caller dispose; dispose baseKey now if we got a subkey.
-            // RegistryKey from OpenSubKey doesn't need base kept open on modern .NET.
-            baseKey.Dispose();
-
-        return key;
-    }
-
-    public static string Combine(string parent, string child) =>
-        string.IsNullOrEmpty(parent) ? child : $"{parent}\\{child}";
-
-    public static PathValidationResult Validate(string path, string? valueName)
-    {
-        if (string.IsNullOrWhiteSpace(path))
-            return PathValidationResult.Ng(UiText.ValidateKeyEmpty);
-
-        if (!TryParse(path, out _, out _))
-            return PathValidationResult.Ng(UiText.ValidateKeyFormat);
-
-        var normalized = Normalize(path);
-        using var key = OpenKey(normalized);
-        if (key is null)
-            return PathValidationResult.Ng(UiText.ValidateKeyMissing);
-
-        if (valueName is null)
-            return PathValidationResult.Ok(UiText.ValidateKeyOkAllValues(normalized));
-
-        try
-        {
-            _ = key.GetValueKind(valueName);
-            return PathValidationResult.Ok(
-                UiText.ValidateKeyOkSingleValue(normalized, UiText.DisplayValueLabel(valueName)));
-        }
-        catch (IOException)
-        {
-            return PathValidationResult.Ng(UiText.ValidateValueMissing(UiText.DisplayValueLabel(valueName)));
-        }
-    }
-}
-
-public readonly record struct PathValidationResult(bool IsOk, string Message)
-{
-    public static PathValidationResult Ok(string message) => new(true, message);
-    public static PathValidationResult Ng(string message) => new(false, message);
-}
-
-public static class RegistryValueCodec
-{
-    public static string? Encode(object? value, RegistryValueKind kind)
-    {
-        if (value is null)
-            return null;
-
-        return kind switch
-        {
-            RegistryValueKind.String or RegistryValueKind.ExpandString => value.ToString(),
-            RegistryValueKind.MultiString => string.Join("\n", (string[])value),
-            RegistryValueKind.DWord => Convert.ToUInt32(value).ToString(),
-            RegistryValueKind.QWord => Convert.ToUInt64(value).ToString(),
-            RegistryValueKind.Binary => Convert.ToBase64String((byte[])value),
-            RegistryValueKind.None => value is byte[] noneBytes ? Convert.ToBase64String(noneBytes) : value.ToString(),
-            _ => value is byte[] bytes ? Convert.ToBase64String(bytes) : value.ToString()
-        };
-    }
-
-    public static object? Decode(string? data, RegistryValueKind kind)
-    {
-        if (data is null)
-            return kind == RegistryValueKind.MultiString ? Array.Empty<string>() : null;
-
-        return kind switch
-        {
-            RegistryValueKind.String or RegistryValueKind.ExpandString => data,
-            RegistryValueKind.MultiString => data.Length == 0 ? Array.Empty<string>() : data.Split('\n'),
-            RegistryValueKind.DWord => uint.Parse(data),
-            RegistryValueKind.QWord => ulong.Parse(data),
-            RegistryValueKind.Binary or RegistryValueKind.None =>
-                data.Length == 0 ? Array.Empty<byte>() : Convert.FromBase64String(data),
-            _ => Convert.FromBase64String(data)
-        };
-    }
-
-    public static string FormatForDisplay(string? data, RegistryValueKind kind)
-    {
-        if (data is null)
-            return UiText.ValueNull;
-
-        return kind switch
-        {
-            RegistryValueKind.Binary or RegistryValueKind.None =>
-                data.Length == 0
-                    ? UiText.ValueEmpty
-                    : UiText.ValueBinarySummary(Convert.FromBase64String(data).Length, Truncate(data, 40)),
-            RegistryValueKind.MultiString => data.Replace('\n', '|'),
-            RegistryValueKind.DWord => $"0x{uint.Parse(data):X8} ({data})",
-            RegistryValueKind.QWord => $"0x{ulong.Parse(data):X16} ({data})",
-            _ => Truncate(data, 120)
-        };
-    }
-
-    private static string Truncate(string s, int max) =>
-        s.Length <= max ? s : s[..max] + "…";
-}
 
 public sealed class RegistrySnapshotService
 {
@@ -198,7 +16,7 @@ public sealed class RegistrySnapshotService
 
         using var key = RegistryPathHelper.OpenKey(path);
         if (key is null)
-            throw new InvalidOperationException($"Could not open registry key: {path}");
+            throw new InvalidOperationException(UiText.ErrCouldNotOpenKey(path));
 
         if (mode == WatchMode.SingleValue)
         {
@@ -239,7 +57,7 @@ public sealed class RegistrySnapshotService
         foreach (var name in key.GetValueNames())
         {
             var kind = key.GetValueKind(name);
-            // DoNotExpandEnvironmentNames keeps REG_EXPAND_SZ raw
+            // DoNotExpandEnvironmentNames で REG_EXPAND_SZ を展開せず生のまま取得
             var value = key.GetValue(name, null, RegistryValueOptions.DoNotExpandEnvironmentNames);
             snapshot.Values.Add(new RegistryValueData
             {
@@ -249,8 +67,7 @@ public sealed class RegistrySnapshotService
             });
         }
 
-        // Default value may exist without being in GetValueNames on some systems;
-        // also capture explicitly named empty default if present.
+        // 既定値は GetValueNames に出ない環境があるため、明示的にも取得する
         try
         {
             var defaultKind = key.GetValueKind("");
@@ -267,7 +84,7 @@ public sealed class RegistrySnapshotService
         }
         catch (IOException)
         {
-            // no default value
+            // 既定値なし
         }
 
         snapshot.Values = snapshot.Values
@@ -304,7 +121,7 @@ public sealed class RegistrySnapshotService
             }
             catch (System.Security.SecurityException)
             {
-                // skip inaccessible keys
+                // アクセスできないキーはスキップ
             }
             catch (UnauthorizedAccessException)
             {
@@ -321,7 +138,7 @@ public sealed class RegistrySnapshotService
         }
         catch (InvalidOperationException)
         {
-            // Entire watched root missing
+            // 監視ルート自体が存在しない
             current = [];
         }
 
@@ -366,7 +183,7 @@ public sealed class RegistrySnapshotService
             }
         }
 
-        // Recreate / restore keys (parents first)
+        // キーを再作成・復元（親から先に）
         foreach (var snap in location.Keys.OrderBy(k => k.Path.Length))
         {
             RestoreKey(snap);
@@ -494,14 +311,14 @@ public sealed class RegistrySnapshotService
         }
         catch
         {
-            // already absent
+            // 既に無い
         }
     }
 
     private static void RestoreSingleValue(RegistryKeySnapshot snap, string valueName)
     {
         if (!RegistryPathHelper.TryParse(snap.Path, out var hive, out var subKey))
-            throw new InvalidOperationException($"Invalid path: {snap.Path}");
+            throw new InvalidOperationException(UiText.ErrInvalidPath(snap.Path));
 
         using var baseKey = RegistryKey.OpenBaseKey(hive, RegistryView.Default);
         RegistryKey key;
@@ -513,7 +330,7 @@ public sealed class RegistrySnapshotService
         else
         {
             key = baseKey.CreateSubKey(subKey, true)
-                 ?? throw new InvalidOperationException($"Could not create key: {snap.Path}");
+                 ?? throw new InvalidOperationException(UiText.ErrCouldNotCreateKey(snap.Path));
             ownsKey = true;
         }
 
@@ -530,7 +347,7 @@ public sealed class RegistrySnapshotService
                 }
                 catch
                 {
-                    // already absent
+                    // 既に無い
                 }
                 return;
             }
@@ -550,7 +367,7 @@ public sealed class RegistrySnapshotService
     private static void RestoreKey(RegistryKeySnapshot snap)
     {
         if (!RegistryPathHelper.TryParse(snap.Path, out var hive, out var subKey))
-            throw new InvalidOperationException($"Invalid path: {snap.Path}");
+            throw new InvalidOperationException(UiText.ErrInvalidPath(snap.Path));
 
         using var baseKey = RegistryKey.OpenBaseKey(hive, RegistryView.Default);
         RegistryKey key;
@@ -562,7 +379,7 @@ public sealed class RegistrySnapshotService
         else
         {
             key = baseKey.CreateSubKey(subKey, true)
-                 ?? throw new InvalidOperationException($"Could not create key: {snap.Path}");
+                 ?? throw new InvalidOperationException(UiText.ErrCouldNotCreateKey(snap.Path));
             ownsKey = true;
         }
 
@@ -582,7 +399,7 @@ public sealed class RegistrySnapshotService
             }
             catch (IOException)
             {
-                // no default value
+                // 既定値なし
             }
 
             foreach (var value in snap.Values)
@@ -624,163 +441,7 @@ public sealed class RegistrySnapshotService
         }
         catch
         {
-            // best effort
+            // 削除できなくても続行（ベストエフォート）
         }
-    }
-}
-
-public static class DiffEngine
-{
-    public static List<DiffChange> Compare(
-        IReadOnlyList<RegistryKeySnapshot> expected,
-        IReadOnlyList<RegistryKeySnapshot> actual)
-    {
-        var changes = new List<DiffChange>();
-        var expectedMap = expected.ToDictionary(k => k.Path, StringComparer.OrdinalIgnoreCase);
-        var actualMap = actual.ToDictionary(k => k.Path, StringComparer.OrdinalIgnoreCase);
-
-        foreach (var path in expectedMap.Keys.Except(actualMap.Keys, StringComparer.OrdinalIgnoreCase)
-                     .OrderBy(p => p, StringComparer.OrdinalIgnoreCase))
-        {
-            changes.Add(new DiffChange
-            {
-                Kind = DiffChangeKind.KeyRemoved,
-                KeyPath = path
-            });
-        }
-
-        foreach (var path in actualMap.Keys.Except(expectedMap.Keys, StringComparer.OrdinalIgnoreCase)
-                     .OrderBy(p => p, StringComparer.OrdinalIgnoreCase))
-        {
-            changes.Add(new DiffChange
-            {
-                Kind = DiffChangeKind.KeyAdded,
-                KeyPath = path
-            });
-        }
-
-        foreach (var path in expectedMap.Keys.Intersect(actualMap.Keys, StringComparer.OrdinalIgnoreCase)
-                     .OrderBy(p => p, StringComparer.OrdinalIgnoreCase))
-        {
-            CompareValues(expectedMap[path], actualMap[path], changes);
-        }
-
-        return changes;
-    }
-
-    private static void CompareValues(RegistryKeySnapshot expected, RegistryKeySnapshot actual, List<DiffChange> changes)
-    {
-        var exp = expected.Values.ToDictionary(v => v.Name, StringComparer.OrdinalIgnoreCase);
-        var act = actual.Values.ToDictionary(v => v.Name, StringComparer.OrdinalIgnoreCase);
-
-        foreach (var name in exp.Keys.Except(act.Keys, StringComparer.OrdinalIgnoreCase))
-        {
-            var v = exp[name];
-            changes.Add(new DiffChange
-            {
-                Kind = DiffChangeKind.ValueRemoved,
-                KeyPath = expected.Path,
-                ValueName = name,
-                OldValue = RegistryValueCodec.FormatForDisplay(v.Data, v.Kind),
-                OldKind = v.Kind.ToString()
-            });
-        }
-
-        foreach (var name in act.Keys.Except(exp.Keys, StringComparer.OrdinalIgnoreCase))
-        {
-            var v = act[name];
-            changes.Add(new DiffChange
-            {
-                Kind = DiffChangeKind.ValueAdded,
-                KeyPath = expected.Path,
-                ValueName = name,
-                NewValue = RegistryValueCodec.FormatForDisplay(v.Data, v.Kind),
-                NewKind = v.Kind.ToString()
-            });
-        }
-
-        foreach (var name in exp.Keys.Intersect(act.Keys, StringComparer.OrdinalIgnoreCase))
-        {
-            var oldV = exp[name];
-            var newV = act[name];
-            if (oldV.Kind == newV.Kind && string.Equals(oldV.Data, newV.Data, StringComparison.Ordinal))
-                continue;
-
-            changes.Add(new DiffChange
-            {
-                Kind = DiffChangeKind.ValueModified,
-                KeyPath = expected.Path,
-                ValueName = name,
-                OldValue = RegistryValueCodec.FormatForDisplay(oldV.Data, oldV.Kind),
-                NewValue = RegistryValueCodec.FormatForDisplay(newV.Data, newV.Kind),
-                OldKind = oldV.Kind.ToString(),
-                NewKind = newV.Kind.ToString()
-            });
-        }
-    }
-}
-
-public sealed class SnapshotStore
-{
-    private readonly string _filePath;
-
-    public SnapshotStore()
-    {
-        var dir = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "MGA",
-            "MGA Registry Checker");
-        Directory.CreateDirectory(dir);
-        _filePath = Path.Combine(dir, "state.json");
-
-        // 旧パスからの移行（存在する場合のみ）
-        TryMigrateFromLegacyPath();
-    }
-
-    public string FilePath => _filePath;
-
-    private void TryMigrateFromLegacyPath()
-    {
-        if (File.Exists(_filePath))
-            return;
-
-        var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        string[] legacyPaths =
-        [
-            Path.Combine(localAppData, "MGA", "MGA RegistryChecker", "state.json"),
-            Path.Combine(localAppData, "MGA-RegistryChecker", "state.json"),
-        ];
-
-        foreach (var legacy in legacyPaths)
-        {
-            if (!File.Exists(legacy))
-                continue;
-
-            try
-            {
-                File.Copy(legacy, _filePath);
-                return;
-            }
-            catch
-            {
-                // 次の候補へ
-            }
-        }
-    }
-
-    public AppState Load()
-    {
-        if (!File.Exists(_filePath))
-            return new AppState();
-
-        var json = File.ReadAllText(_filePath, Encoding.UTF8);
-        return System.Text.Json.JsonSerializer.Deserialize(json, AppJsonContext.Default.AppState)
-               ?? new AppState();
-    }
-
-    public void Save(AppState state)
-    {
-        var json = System.Text.Json.JsonSerializer.Serialize(state, AppJsonContext.Default.AppState);
-        File.WriteAllText(_filePath, json, Encoding.UTF8);
     }
 }

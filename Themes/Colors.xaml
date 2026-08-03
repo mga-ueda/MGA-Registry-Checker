@@ -1,0 +1,64 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+        <Color x:Key="BgColor">#FF1A1D23</Color>
+        <Color x:Key="PanelColor">#FF242830</Color>
+        <Color x:Key="BorderColor">#FF3A404C</Color>
+        <Color x:Key="FgColor">#FFE8EAED</Color>
+        <Color x:Key="FgMutedColor">#FF9AA0A6</Color>
+        <Color x:Key="AccentColor">#FF4C8BF5</Color>
+        <Color x:Key="AccentHoverColor">#FF6BA0F7</Color>
+        <Color x:Key="CheckColor">#FF2EC4B6</Color>
+        <Color x:Key="CheckHoverColor">#FF5ED4C8</Color>
+        <Color x:Key="RecaptureColor">#FFE6A23C</Color>
+        <Color x:Key="RecaptureHoverColor">#FFF0B85A</Color>
+        <Color x:Key="NeutralColor">#FF9B8CDB</Color>
+        <Color x:Key="NeutralHoverColor">#FFB5A8EB</Color>
+        <Color x:Key="DangerColor">#FFD93025</Color>
+        <Color x:Key="DangerHoverColor">#FFE35D54</Color>
+        <Color x:Key="InputBgColor">#FF2C313A</Color>
+        <Color x:Key="BtnPrimaryFillColor">#FF1E2838</Color>
+        <Color x:Key="BtnPrimaryFillHoverColor">#FF283448</Color>
+        <Color x:Key="BtnCheckFillColor">#FF1A2C28</Color>
+        <Color x:Key="BtnCheckFillHoverColor">#FF243834</Color>
+        <Color x:Key="BtnRecaptureFillColor">#FF2E2614</Color>
+        <Color x:Key="BtnRecaptureFillHoverColor">#FF3A3018</Color>
+        <Color x:Key="BtnNeutralFillColor">#FF242030</Color>
+        <Color x:Key="BtnNeutralFillHoverColor">#FF2E2A3C</Color>
+        <Color x:Key="BtnDangerFillColor">#FF2A1C1C</Color>
+        <Color x:Key="BtnDangerFillHoverColor">#FF382626</Color>
+        <Color x:Key="GrayColor">#FF9AA0A6</Color>
+        <Color x:Key="GrayHoverColor">#FFB0B5BB</Color>
+        <Color x:Key="BtnGrayFillColor">#FF2A2C30</Color>
+        <Color x:Key="BtnGrayFillHoverColor">#FF3A3E44</Color>
+
+        <SolidColorBrush x:Key="BgBrush" Color="{StaticResource BgColor}"/>
+        <SolidColorBrush x:Key="PanelBrush" Color="{StaticResource PanelColor}"/>
+        <SolidColorBrush x:Key="AppBorderBrush" Color="{StaticResource BorderColor}"/>
+        <SolidColorBrush x:Key="FgBrush" Color="{StaticResource FgColor}"/>
+        <SolidColorBrush x:Key="FgMutedBrush" Color="{StaticResource FgMutedColor}"/>
+        <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}"/>
+        <SolidColorBrush x:Key="AccentHoverBrush" Color="{StaticResource AccentHoverColor}"/>
+        <SolidColorBrush x:Key="CheckBrush" Color="{StaticResource CheckColor}"/>
+        <SolidColorBrush x:Key="CheckHoverBrush" Color="{StaticResource CheckHoverColor}"/>
+        <SolidColorBrush x:Key="RecaptureBrush" Color="{StaticResource RecaptureColor}"/>
+        <SolidColorBrush x:Key="RecaptureHoverBrush" Color="{StaticResource RecaptureHoverColor}"/>
+        <SolidColorBrush x:Key="NeutralBrush" Color="{StaticResource NeutralColor}"/>
+        <SolidColorBrush x:Key="NeutralHoverBrush" Color="{StaticResource NeutralHoverColor}"/>
+        <SolidColorBrush x:Key="DangerBrush" Color="{StaticResource DangerColor}"/>
+        <SolidColorBrush x:Key="DangerHoverBrush" Color="{StaticResource DangerHoverColor}"/>
+        <SolidColorBrush x:Key="InputBgBrush" Color="{StaticResource InputBgColor}"/>
+        <SolidColorBrush x:Key="BtnPrimaryFillBrush" Color="{StaticResource BtnPrimaryFillColor}"/>
+        <SolidColorBrush x:Key="BtnPrimaryFillHoverBrush" Color="{StaticResource BtnPrimaryFillHoverColor}"/>
+        <SolidColorBrush x:Key="BtnCheckFillBrush" Color="{StaticResource BtnCheckFillColor}"/>
+        <SolidColorBrush x:Key="BtnCheckFillHoverBrush" Color="{StaticResource BtnCheckFillHoverColor}"/>
+        <SolidColorBrush x:Key="BtnRecaptureFillBrush" Color="{StaticResource BtnRecaptureFillColor}"/>
+        <SolidColorBrush x:Key="BtnRecaptureFillHoverBrush" Color="{StaticResource BtnRecaptureFillHoverColor}"/>
+        <SolidColorBrush x:Key="BtnNeutralFillBrush" Color="{StaticResource BtnNeutralFillColor}"/>
+        <SolidColorBrush x:Key="BtnNeutralFillHoverBrush" Color="{StaticResource BtnNeutralFillHoverColor}"/>
+        <SolidColorBrush x:Key="BtnDangerFillBrush" Color="{StaticResource BtnDangerFillColor}"/>
+        <SolidColorBrush x:Key="BtnDangerFillHoverBrush" Color="{StaticResource BtnDangerFillHoverColor}"/>
+        <SolidColorBrush x:Key="GrayBrush" Color="{StaticResource GrayColor}"/>
+        <SolidColorBrush x:Key="GrayHoverBrush" Color="{StaticResource GrayHoverColor}"/>
+        <SolidColorBrush x:Key="BtnGrayFillBrush" Color="{StaticResource BtnGrayFillColor}"/>
+        <SolidColorBrush x:Key="BtnGrayFillHoverBrush" Color="{StaticResource BtnGrayFillHoverColor}"/>
+</ResourceDictionary>

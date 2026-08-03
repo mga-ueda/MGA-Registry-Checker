@@ -1,4 +1,5 @@
 using System.Windows;
+using MGA_RegistryChecker.Presentation;
 using MGA_RegistryChecker.Services;
 
 namespace MGA_RegistryChecker;
@@ -25,19 +26,19 @@ public partial class App : Application
     /// </summary>
     private void RunCheckOnly()
     {
-        // DiffWindow が閉じたタイミングでアプリが落ちないようにする
         ShutdownMode = ShutdownMode.OnExplicitShutdown;
 
         try
         {
             var store = new SnapshotStore();
             var registry = new RegistrySnapshotService();
+            var apply = new DiffApplyService(registry, store);
+            var session = new DiffSession(registry, apply, new WpfDiffPresenter());
             var state = store.Load();
-            var processor = new WatchDiffProcessor(registry, store);
-            var result = processor.Process(
+            var result = session.Process(
                 state,
                 state.Locations.ToList(),
-                owner: null,
+                ownerWindow: null,
                 setStatus: null,
                 silent: true);
 

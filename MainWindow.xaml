@@ -6,11 +6,12 @@
         Icon="pack://application:,,,/Assets/app.ico"
         Height="520" Width="860"
         MinHeight="360" MinWidth="680"
-        WindowStartupLocation="CenterScreen"
+        WindowStartupLocation="Manual"
         Background="{StaticResource BgBrush}"
         Foreground="{StaticResource FgBrush}"
         PreviewKeyDown="Window_OnPreviewKeyDown"
         Loaded="Window_OnLoaded"
+        Closing="Window_OnClosing"
         UseLayoutRounding="True"
         SnapsToDevicePixels="True">
     <Grid Margin="10" UseLayoutRounding="True">

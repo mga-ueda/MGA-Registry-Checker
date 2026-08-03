@@ -7,7 +7,7 @@ namespace MGA_RegistryChecker;
 public static class UiText
 {
     // ----- アプリ共通 -----
-    public const string AppName = "MGA Registry Checker";
+    public const string AppName = Services.AppPaths.AppFolder;
     public const string DefaultValueName = "(Default)";
     public const string Ready = "準備完了";
 
@@ -165,12 +165,19 @@ public static class UiText
     public static string MsgRestoreFailed(string detail) =>
         $"レジストリの復元に失敗しました。\n管理者権限が必要な場合があります。\n\n{detail}";
 
+    // ----- 例外・内部エラー表示 -----
+    public static string ErrCouldNotOpenKey(string path) =>
+        $"レジストリキーを開けません: {path}";
+
+    public static string ErrInvalidPath(string path) =>
+        $"不正なパスです: {path}";
+
+    public static string ErrCouldNotCreateKey(string path) =>
+        $"レジストリキーを作成できません: {path}";
+
     // ----- ステータス欄 -----
     public static string StatusStateFile(string path) =>
         $"状態ファイル: {path}";
-
-    public static string StatusDebugSeed(int count, string path) =>
-        $"DEBUG: 監視 {count} 件を投入（SIMULATE DIFF で差分 20 件） / {path}";
 
     public const string StatusCapturing = "スナップショットを取得中…";
     public const string StatusAddFailed = "追加に失敗しました";
@@ -179,6 +186,12 @@ public static class UiText
 
     public static string StatusAdded(string label) =>
         $"追加しました: {label}";
+
+    public static string StatusAddedKeyOnly(string path, int keyCount) =>
+        StatusAdded($"{path}（{keyCount} キー）");
+
+    public static string StatusAddedSingleValue(string path, string? valueName) =>
+        StatusAdded(SingleValueDisplayPath(path, valueName));
 
     public static string StatusRemoved(string path) =>
         $"削除しました: {path}";

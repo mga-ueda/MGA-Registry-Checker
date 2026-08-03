@@ -118,13 +118,30 @@ int code = p?.ExitCode ?? -1;
 
 `%LocalAppData%\MGA\MGA Registry Checker\state.json`
 
-旧パスからの移行がある場合は初回起動時に取り込まれます。
-
 ## ビルド
 
 ```powershell
 dotnet build -c Release
 ```
+
+## 構成（開発者向け）
+
+| 領域 | 主な型 / 配置 |
+|------|----------------|
+| 起動 | `App`（通常 UI / `--check`） |
+| 差分オーケストレーション | `DiffSession` + `DiffApplyService` + `IDiffPresenter` |
+| レジストリ I/O | `RegistrySnapshotService` / `RegistryPathHelper` / `RegistryValueCodec` |
+| 比較 | `DiffEngine` / `RegistryValueDisplay` |
+| 永続化 | `SnapshotStore` / `AppPaths` |
+| UI | `MainWindow` / `DiffWindow` / `ViewModels/*` / `Themes/*` |
+
+## 手動確認チェックリスト
+
+- [ ] 通常起動 → メイン表示 → 起動時に全監視をチェック
+- [ ] `--check` → 差分なしなら無表示で終了コード 0
+- [ ] `--check` → 差分ありなら取捨選択ダイアログのみ（メイン非表示）
+- [ ] Key + subkeys: 直下サブキー追加が KeyAdded になる
+- [ ] ACCEPT / REVERT / Mixed / CANCEL 後の `state.json` とレジストリ
 
 ## その他の注意
 
