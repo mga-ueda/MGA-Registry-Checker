@@ -119,7 +119,7 @@ GitHub から落とした EXE には、Windows が「インターネットから
 PowerShell で次を実行します（パスは置いた場所に合わせてください）。
 
 ```powershell
-Unblock-File -LiteralPath "V:\マイドライブ\Program Files\MGA Registry Checker\MGA Registry Checker.exe"
+Unblock-File -LiteralPath "V:\マイドライブ\MGA Registry Checker.exe"
 ```
 
 または、EXE を **ローカルディスク**（例: `C:\Tools\...`）へコピーしてから使うと、印の影響を受けにくくなります。
