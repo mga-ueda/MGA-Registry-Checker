@@ -16,8 +16,8 @@
 
 ### 1. アプリを用意する
 
-1. [Releases](https://github.com/mga-ueda/MGA-Registry-Checker/releases) から最新の `MGA Registry Checker.exe` をダウンロードする  
-2. 好きなフォルダに置いてダブルクリックで起動する  
+1. [Releases](https://github.com/mga-ueda/MGA-Registry-Checker/releases) から最新の `MGA-Registry-Checker-win-x64.zip` をダウンロードする  
+2. 解凍すると正式名称の `MGA Registry Checker.exe` が出てくるので、好きなフォルダに置いてダブルクリックで起動する  
 
 Windows だけ必要です。別途 .NET を入れる必要はありません（リリース版はランタイム同梱です）。
 
