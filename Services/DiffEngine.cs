@@ -54,8 +54,7 @@ public static class DiffEngine
                 Kind = DiffChangeKind.ValueRemoved,
                 KeyPath = expected.Path,
                 ValueName = name,
-                OldValue = RegistryValueDisplay.Format(v.Data, v.Kind),
-                OldKind = v.Kind.ToString()
+                OldValue = RegistryValueDisplay.Format(v.Data, v.Kind)
             });
         }
 
@@ -67,8 +66,7 @@ public static class DiffEngine
                 Kind = DiffChangeKind.ValueAdded,
                 KeyPath = expected.Path,
                 ValueName = name,
-                NewValue = RegistryValueDisplay.Format(v.Data, v.Kind),
-                NewKind = v.Kind.ToString()
+                NewValue = RegistryValueDisplay.Format(v.Data, v.Kind)
             });
         }
 
@@ -85,9 +83,7 @@ public static class DiffEngine
                 KeyPath = expected.Path,
                 ValueName = name,
                 OldValue = RegistryValueDisplay.Format(oldV.Data, oldV.Kind),
-                NewValue = RegistryValueDisplay.Format(newV.Data, newV.Kind),
-                OldKind = oldV.Kind.ToString(),
-                NewKind = newV.Kind.ToString()
+                NewValue = RegistryValueDisplay.Format(newV.Data, newV.Kind)
             });
         }
     }

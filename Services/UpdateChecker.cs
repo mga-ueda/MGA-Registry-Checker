@@ -16,7 +16,7 @@ public static class UpdateChecker
 
     private static readonly HttpClient Http = CreateHttpClient();
 
-    public sealed record ReleaseInfo(string TagName, string DisplayVersion, string HtmlUrl);
+    public sealed record ReleaseInfo(string DisplayVersion, string HtmlUrl);
 
     public static async Task<ReleaseInfo?> TryGetNewerReleaseAsync(CancellationToken cancellationToken = default)
     {
@@ -52,7 +52,7 @@ public static class UpdateChecker
             if (display.StartsWith('v') || display.StartsWith('V'))
                 display = display[1..];
 
-            return new ReleaseInfo(dto.TagName.Trim(), display, dto.HtmlUrl.Trim());
+            return new ReleaseInfo(display, dto.HtmlUrl.Trim());
         }
         catch (OperationCanceledException)
         {

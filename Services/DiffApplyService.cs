@@ -3,14 +3,10 @@ using MgaRegistryChecker.Models;
 namespace MgaRegistryChecker.Services;
 
 /// <summary>
-/// 差分ダイアログ結果をレジストリ書込とスナップショット更新に反映する（副作用の単一入口）。
+/// 差分ダイアログ結果をレジストリ書込とスナップショット更新に反映する。
 /// </summary>
-public sealed class DiffApplyService(SnapshotStore store)
+public static class DiffApplyService
 {
-    private readonly SnapshotStore _store = store;
-
-    public void Save(AppState state) => _store.Save(state);
-
     /// <summary>REVERT / Mixed のレジストリ書き戻し。失敗時は例外。</summary>
     public static void ApplyRegistryWrites(LocationDiff diff, DiffDialogResult result)
     {
@@ -47,14 +43,14 @@ public sealed class DiffApplyService(SnapshotStore store)
                 loc.CapturedAt = DateTime.Now;
                 break;
             case DiffDecision.Mixed:
-            {
-                var accepted = result.Items
-                    .Where(x => x.Action == DiffItemAction.Accept)
-                    .Select(x => x.Change)
-                    .ToList();
-                RegistrySnapshotService.AcceptChangesIntoSnapshot(loc, diff, accepted);
-                break;
-            }
+                {
+                    var accepted = result.Items
+                        .Where(x => x.Action == DiffItemAction.Accept)
+                        .Select(x => x.Change)
+                        .ToList();
+                    RegistrySnapshotService.AcceptChangesIntoSnapshot(loc, diff, accepted);
+                    break;
+                }
             default:
                 return;
         }

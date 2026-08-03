@@ -57,8 +57,7 @@ public partial class App : Application
             PromptIfUpdateAvailableBlocking(ownerWindow: null);
 
             var store = new SnapshotStore();
-            var apply = new DiffApplyService(store);
-            var session = new DiffSession(apply, new WpfDiffPresenter());
+            var session = new DiffSession(store, new WpfDiffPresenter());
             var state = store.Load();
             var result = session.Process(
                 state,

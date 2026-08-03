@@ -170,25 +170,25 @@ public static class RegistrySnapshotService
                     TryDeleteKey(change.KeyPath);
                     break;
                 case DiffChangeKind.KeyRemoved:
-                {
-                    var snap = location.Keys.FirstOrDefault(k =>
-                        string.Equals(k.Path, change.KeyPath, StringComparison.OrdinalIgnoreCase));
-                    if (snap is not null)
-                        RestoreKey(snap);
-                    break;
-                }
+                    {
+                        var snap = location.Keys.FirstOrDefault(k =>
+                            string.Equals(k.Path, change.KeyPath, StringComparison.OrdinalIgnoreCase));
+                        if (snap is not null)
+                            RestoreKey(snap);
+                        break;
+                    }
                 case DiffChangeKind.ValueAdded:
                     TryDeleteValue(change.KeyPath, change.ValueName ?? string.Empty);
                     break;
                 case DiffChangeKind.ValueRemoved:
                 case DiffChangeKind.ValueModified:
-                {
-                    var snap = location.Keys.FirstOrDefault(k =>
-                        string.Equals(k.Path, change.KeyPath, StringComparison.OrdinalIgnoreCase));
-                    if (snap is not null)
-                        RestoreSingleValue(snap, change.ValueName ?? string.Empty);
-                    break;
-                }
+                    {
+                        var snap = location.Keys.FirstOrDefault(k =>
+                            string.Equals(k.Path, change.KeyPath, StringComparison.OrdinalIgnoreCase));
+                        if (snap is not null)
+                            RestoreSingleValue(snap, change.ValueName ?? string.Empty);
+                        break;
+                    }
             }
         }
     }

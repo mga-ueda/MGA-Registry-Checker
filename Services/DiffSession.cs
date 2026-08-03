@@ -5,15 +5,14 @@ namespace MgaRegistryChecker.Services;
 
 /// <summary>監視場所の差分比較と、差分ダイアログ結果の適用オーケストレーション。</summary>
 public sealed class DiffSession(
-    DiffApplyService apply,
+    SnapshotStore store,
     IDiffPresenter presenter)
 {
-    private readonly DiffApplyService _apply = apply;
+    private readonly SnapshotStore _store = store;
     private readonly IDiffPresenter _presenter = presenter;
 
     public sealed class ProcessResult
     {
-        public bool AnyDifferences { get; init; }
         public bool HadErrors { get; init; }
     }
 
@@ -68,7 +67,6 @@ public sealed class DiffSession(
 
         return new ProcessResult
         {
-            AnyDifferences = true,
             HadErrors = hadErrors
         };
     }
@@ -108,7 +106,7 @@ public sealed class DiffSession(
                 DiffApplyService.ApplySnapshotUpdate(diff, sliced);
             }
 
-            _apply.Save(state);
+            _store.Save(state);
         }
         catch (Exception ex)
         {

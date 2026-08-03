@@ -66,8 +66,6 @@ public sealed class DiffChange
     public string? ValueName { get; set; }
     public string? OldValue { get; set; }
     public string? NewValue { get; set; }
-    public string? OldKind { get; set; }
-    public string? NewKind { get; set; }
 }
 
 public sealed class LocationDiff

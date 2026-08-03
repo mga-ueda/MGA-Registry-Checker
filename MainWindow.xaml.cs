@@ -28,8 +28,7 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-        var apply = new DiffApplyService(_store);
-        _diffSession = new DiffSession(apply, new WpfDiffPresenter());
+        _diffSession = new DiffSession(_store, new WpfDiffPresenter());
         Title = UiText.MainWindowTitle(AppVersion.GetDisplayVersion());
         LocationList.ItemsSource = _items;
         OkBrush.Freeze();
