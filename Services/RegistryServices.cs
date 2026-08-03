@@ -275,6 +275,21 @@ public sealed class RegistrySnapshotService
             .ToList();
         result.Add(snapshot);
 
+        if (mode == WatchMode.KeyOnly)
+        {
+            // 1階層のサブキー名のみ（存在監視）。中身やそれより深い階層は見ない。
+            foreach (var subName in key.GetSubKeyNames().OrderBy(n => n, StringComparer.OrdinalIgnoreCase))
+            {
+                result.Add(new RegistryKeySnapshot
+                {
+                    Path = RegistryPathHelper.Combine(fullPath, subName),
+                    Values = []
+                });
+            }
+
+            return;
+        }
+
         if (mode != WatchMode.Recursive)
             return;
 
@@ -330,8 +345,8 @@ public sealed class RegistrySnapshotService
 
         var targetPaths = location.Keys.Select(k => k.Path).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-        // Remove keys that exist now but were not in snapshot (deepest first)
-        if (location.Mode == WatchMode.Recursive)
+        // スナップショットに無いキーを削除（Recursive は深い階層、KeyOnly は直下1階層分）
+        if (location.Mode is WatchMode.Recursive or WatchMode.KeyOnly)
         {
             List<RegistryKeySnapshot> current;
             try

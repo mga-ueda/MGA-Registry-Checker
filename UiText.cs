@@ -29,16 +29,49 @@ public static class UiText
         @"例: HKEY_CURRENT_USER\Control Panel\Desktop\WindowMetrics";
 
     public const string TooltipValueName =
-        "空欄: その Key 直下の全 Value を監視。例: BorderWidth（その Value だけ監視）";
+        "空欄: その Key 直下の全 Value と、直下1階層のサブキー名を監視。例: BorderWidth（その Value だけ監視）";
+
+    public const string TooltipAddWatch =
+        "入力した Key / Value を監視対象に追加し、現在のレジストリ状態をスナップショットとして保存します。Value 空欄時は直下の全 Value と直下サブキー名（1階層）を記録します";
+
+    public const string TooltipCheckNow =
+        "選択中の場所について、スナップショットと現在のレジストリを比較します。差異があれば差分ダイアログを表示します";
 
     public const string TooltipRecapture =
         "選択中の場所のスナップショットを、現在のレジストリ状態で更新します";
 
+    public const string TooltipRemove =
+        "選択中の場所の監視を削除します（Del キーでも実行できます）。レジストリ自体は変更しません";
+
     public const string TooltipSimulateDiff =
         "DEBUG 専用: 擬似差分ダイアログを表示（レジストリは変更しません）";
 
+    public const string TooltipWatchList =
+        "監視中のレジストリ場所一覧です。行を選択すると確認・再取得・削除が有効になります。余白クリックで選択解除";
+
+    public const string TooltipValidation =
+        "入力内容の検証結果です。OK のときだけ監視追加できます";
+
+    public const string TooltipStatus =
+        "アプリの動作状況や、状態ファイルの保存場所を表示します";
+
+    public const string TooltipDiffType =
+        "差分の種類（キー追加・削除、値追加・削除・変更）";
+
+    public const string TooltipDiffKey =
+        "変更があったレジストリキーのパス";
+
+    public const string TooltipDiffValue =
+        "変更があった値の名前。キー追加・削除の行では空です";
+
+    public const string TooltipDiffOld =
+        "スナップショット側（以前）の値";
+
+    public const string TooltipDiffNew =
+        "現在のレジストリ側の値";
+
     public const string ValidationHintIdle =
-        "Key を入力してください。Value が空のときは、その Key 直下のすべての Value を監視します（サブキーは含みません）。Value を指定すると、その1件だけを監視します。";
+        "Key を入力してください。Value が空のときは、その Key 直下のすべての Value と、直下1階層のサブキー名を監視します（それより深い階層は含みません）。Value を指定すると、その1件だけを監視します。";
 
     public const string EmptyWatchList =
         "監視するレジストリ場所を追加してください";
@@ -182,7 +215,7 @@ public static class UiText
 
     // ----- 監視リスト表示 -----
     public const string ModeRecursive = "Recursive";
-    public const string ModeKeyOnly = "Key only";
+    public const string ModeKeyOnly = "Key + subkeys";
     public const string ModeSingleValue = "Single value";
     public const string CountOneValue = "1 value";
 
@@ -198,7 +231,7 @@ public static class UiText
     public const string ValidateKeyMissing = "NG - Key が存在しないか、アクセスできません";
 
     public static string ValidateKeyOkAllValues(string normalized) =>
-        $"OK - Key: {normalized}（直下の全 Value を監視）";
+        $"OK - Key: {normalized}（直下の全 Value と直下サブキー名を監視）";
 
     public static string ValidateKeyOkSingleValue(string normalized, string label) =>
         $"OK - Key: {normalized} → Value: {label}";

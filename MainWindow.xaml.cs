@@ -52,7 +52,6 @@ public partial class MainWindow : Window
     {
         LoadState();
 #if DEBUG
-        SeedDebugWatchList();
         if (SimulateDiffButton is not null)
             SimulateDiffButton.Visibility = Visibility.Visible;
 #endif
@@ -63,24 +62,8 @@ public partial class MainWindow : Window
             return;
 
         _startupChecked = true;
-#if DEBUG
-        // 擬似パスの実レジストリ比較は行わない（SIMULATE DIFF で UI 確認）
-#else
         Dispatcher.BeginInvoke(CheckAllDifferences, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
-#endif
     }
-
-#if DEBUG
-    /// <summary>UI 確認用: 監視項目を約 20 件投入（メモリ上のみ。状態ファイルは上書きしない）。</summary>
-    private void SeedDebugWatchList()
-    {
-        _state.Locations = DiffSimulator.CreateDemoLocations(20);
-        RefreshList();
-        LocationList.SelectedItem = null;
-        UpdateSelectionActions();
-        StatusText.Text = UiText.StatusDebugSeed(_state.Locations.Count, _store.FilePath);
-    }
-#endif
 
     private void LoadState()
     {

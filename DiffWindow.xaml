@@ -141,20 +141,32 @@
                 </DataGrid.Resources>
                 <DataGrid.Columns>
                     <DataGridTemplateColumn x:Name="TypeColumn" Header="{x:Static local:UiText.ColumnType}" Width="Auto" MinWidth="64"
-                                            CellStyle="{StaticResource CenterTextCell}">
+                                            CellStyle="{StaticResource CenterTextCell}"
+                                            ToolTipService.ToolTip="{x:Static local:UiText.TooltipDiffType}">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <TextBlock Text="{Binding KindLabel}" Foreground="{Binding KindBrush}"
                                            FontWeight="SemiBold"
                                            HorizontalAlignment="Center" VerticalAlignment="Center"
-                                           TextAlignment="Center"/>
+                                           TextAlignment="Center"
+                                           ToolTip="{Binding KindLabel}"/>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
                     <DataGridTextColumn x:Name="KeyColumn" Header="{x:Static local:UiText.ColumnKey}" Binding="{Binding KeyPath}"
-                                        Width="*" IsReadOnly="True" MinWidth="120"/>
+                                        Width="*" IsReadOnly="True" MinWidth="120"
+                                        ToolTipService.ToolTip="{x:Static local:UiText.TooltipDiffKey}">
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+                                <Setter Property="VerticalAlignment" Value="Center"/>
+                                <Setter Property="ToolTip" Value="{Binding KeyPath}"/>
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
                     <DataGridTextColumn x:Name="ValueColumn" Header="{x:Static local:UiText.ColumnValue}" Binding="{Binding ValueName}"
-                                        Width="Auto" IsReadOnly="True" MinWidth="60">
+                                        Width="Auto" IsReadOnly="True" MinWidth="60"
+                                        ToolTipService.ToolTip="{x:Static local:UiText.TooltipDiffValue}">
                         <DataGridTextColumn.ElementStyle>
                             <Style TargetType="TextBlock">
                                 <Setter Property="TextTrimming" Value="None"/>
@@ -165,7 +177,8 @@
                         </DataGridTextColumn.ElementStyle>
                     </DataGridTextColumn>
                     <DataGridTextColumn x:Name="OldColumn" Header="{x:Static local:UiText.ColumnOld}" Binding="{Binding OldText}"
-                                        Width="Auto" IsReadOnly="True" MinWidth="60">
+                                        Width="Auto" IsReadOnly="True" MinWidth="60"
+                                        ToolTipService.ToolTip="{x:Static local:UiText.TooltipDiffOld}">
                         <DataGridTextColumn.ElementStyle>
                             <Style TargetType="TextBlock">
                                 <Setter Property="TextTrimming" Value="None"/>
@@ -176,7 +189,8 @@
                         </DataGridTextColumn.ElementStyle>
                     </DataGridTextColumn>
                     <DataGridTextColumn x:Name="NewColumn" Header="{x:Static local:UiText.ColumnNew}" Binding="{Binding NewText}"
-                                        Width="Auto" IsReadOnly="True" MinWidth="60">
+                                        Width="Auto" IsReadOnly="True" MinWidth="60"
+                                        ToolTipService.ToolTip="{x:Static local:UiText.TooltipDiffNew}">
                         <DataGridTextColumn.ElementStyle>
                             <Style TargetType="TextBlock">
                                 <Setter Property="TextTrimming" Value="None"/>

@@ -54,12 +54,14 @@
                          ToolTip="{x:Static local:UiText.TooltipValueName}"/>
                 <Button x:Name="AddButton" Grid.Column="4" Content="{x:Static local:UiText.ButtonAddWatch}"
                         Width="120" Height="28" Margin="10,0,0,0" Padding="8,2"
-                        Style="{StaticResource PrimaryButton}" Click="Add_Click"/>
+                        Style="{StaticResource PrimaryButton}" Click="Add_Click"
+                        ToolTip="{x:Static local:UiText.TooltipAddWatch}"/>
 
                 <TextBlock x:Name="ValidationMessage" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="5"
                            Margin="0,10,0,0" TextWrapping="Wrap" FontSize="12"
                            Foreground="{StaticResource FgMutedBrush}"
-                           Text="{x:Static local:UiText.ValidationHintIdle}"/>
+                           Text="{x:Static local:UiText.ValidationHintIdle}"
+                           ToolTip="{x:Static local:UiText.TooltipValidation}"/>
             </Grid>
         </Border>
 
@@ -78,16 +80,17 @@
                          SelectionChanged="LocationList_OnSelectionChanged"
                          PreviewMouseLeftButtonDown="LocationList_OnPreviewMouseLeftButtonDown"
                          UseLayoutRounding="True"
-                         SnapsToDevicePixels="True">
+                         SnapsToDevicePixels="True"
+                         ToolTip="{x:Static local:UiText.TooltipWatchList}">
                     <ListBox.ItemTemplate>
                         <DataTemplate>
-                            <StackPanel>
+                            <StackPanel ToolTip="{Binding DisplayPath}">
                                 <TextBlock Text="{Binding DisplayPath}" FontWeight="SemiBold" TextWrapping="Wrap"/>
                                 <TextBlock Foreground="{StaticResource FgMutedBrush}" FontSize="12" Margin="0,2,0,0">
                                     <Run Text="{Binding ModeLabel, Mode=OneWay}"/>
-                                    <Run Text=" | "/>
+                                    <Run Text=" - "/>
                                     <Run Text="{Binding KeyCount, Mode=OneWay}"/>
-                                    <Run Text=" | "/>
+                                    <Run Text=" - "/>
                                     <Run Text="{Binding CapturedAtText, Mode=OneWay}"/>
                                 </TextBlock>
                             </StackPanel>
@@ -113,20 +116,23 @@
                     <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
                         <Button x:Name="CheckNowButton" Content="{x:Static local:UiText.ButtonCheckNow}" Width="110" Height="28" Margin="0,0,10,0"
                                 IsEnabled="False"
-                                Style="{StaticResource CheckButton}" Click="CheckNow_Click"/>
+                                Style="{StaticResource CheckButton}" Click="CheckNow_Click"
+                                ToolTip="{x:Static local:UiText.TooltipCheckNow}"/>
                         <Button x:Name="RecaptureButton" Content="{x:Static local:UiText.ButtonRecapture}" Width="110" Height="28" Margin="0,0,10,0"
                                 IsEnabled="False"
                                 Style="{StaticResource RecaptureButton}" Click="Recapture_Click"
                                 ToolTip="{x:Static local:UiText.TooltipRecapture}"/>
                         <Button x:Name="RemoveButton" Content="{x:Static local:UiText.ButtonRemove}" Width="80" Height="28"
                                 IsEnabled="False"
-                                Style="{StaticResource DangerButton}" Click="Remove_Click"/>
+                                Style="{StaticResource DangerButton}" Click="Remove_Click"
+                                ToolTip="{x:Static local:UiText.TooltipRemove}"/>
                     </StackPanel>
                 </DockPanel>
             </Grid>
         </Border>
 
         <TextBlock x:Name="StatusText" Grid.Row="3" Margin="0,10,0,0"
-                   Foreground="{StaticResource FgMutedBrush}" Text="{x:Static local:UiText.Ready}"/>
+                   Foreground="{StaticResource FgMutedBrush}" Text="{x:Static local:UiText.Ready}"
+                   ToolTip="{x:Static local:UiText.TooltipStatus}"/>
     </Grid>
 </Window>
