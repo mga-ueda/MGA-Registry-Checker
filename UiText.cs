@@ -21,7 +21,6 @@ public static class UiText
     public const string ButtonCheckNow = "CHECK NOW";
     public const string ButtonRecapture = "RECAPTURE";
     public const string ButtonRemove = "REMOVE";
-    public const string ButtonSimulateDiff = "SIMULATE DIFF";
     public const string ButtonCancel = "CANCEL";
     public const string ButtonApply = "APPLY";
 
@@ -42,9 +41,6 @@ public static class UiText
 
     public const string TooltipRemove =
         "選択中の場所の監視を削除します（Del キーでも実行できます）。レジストリ自体は変更しません";
-
-    public const string TooltipSimulateDiff =
-        "DEBUG 専用: 擬似差分ダイアログを表示（レジストリは変更しません）";
 
     public const string TooltipWatchList =
         "監視中のレジストリ場所一覧です。行を選択すると確認・再取得・削除が有効になります。余白クリックで選択解除";
@@ -83,7 +79,6 @@ public static class UiText
     public const string TitleConfirm = "確認";
     public const string TitleRestoreError = "復元エラー";
     public const string TitleDiff = "レジストリの変更";
-    public const string TitleDiffSimulation = "レジストリの変更（シミュレーション）";
 
     // ----- 差分ダイアログ -----
     public const string ColumnType = "Type";
@@ -131,16 +126,10 @@ public static class UiText
     public static string DiffDetectedMulti(int watchCount) =>
         $"変更を検出: {watchCount} 件の監視場所";
 
-    public static string DiffDetectedSim(string path) =>
-        $"[SIM] 変更を検出: {path}";
-
     public static string DiffSubText(int changeCount, int watchCount = 1) =>
         watchCount <= 1
             ? $"{changeCount} 件の差異があります。全行を ACCEPT（青）または REVERT（赤）に設定すると APPLY が有効になります。見出しで全選択可。CANCEL は何もせず閉じます（次回も通知されます）。"
             : $"{watchCount} 監視場所 / {changeCount} 件の差異があります。全行を ACCEPT（青）または REVERT（赤）に設定すると APPLY が有効になります。見出しで全選択可。CANCEL は何もせず閉じます（次回も通知されます）。";
-
-    public static string DiffSubTextSim(int count) =>
-        $"{count} 件の擬似差分です。全行を ACCEPT（青）または REVERT（赤）に設定すると APPLY が有効になります。見出しで全選択可。CANCEL は常に有効です。実レジストリ・保存データは変わりません。";
 
     // ----- MessageBox 本文 -----
     public const string MsgInputInvalid =
@@ -235,18 +224,6 @@ public static class UiText
         location.Mode == Models.WatchMode.SingleValue
             ? SingleValueDisplayPath(location.Path, location.ValueName)
             : location.Path;
-
-    public static string StatusSimAcceptAll(int count) =>
-        $"シミュレート: ACCEPT ALL（未変更） / {count} 件";
-
-    public static string StatusSimRevertAll(int count) =>
-        $"シミュレート: REVERT ALL（未変更） / {count} 件";
-
-    public static string StatusSimMixed(int acceptCount, int revertCount) =>
-        $"シミュレート: APPLY（未変更） ACCEPT {acceptCount} / REVERT {revertCount}";
-
-    public static string StatusSimCancel(int count) =>
-        $"シミュレート: CANCEL / {count} 件";
 
     // ----- 監視リスト表示 -----
     public const string ModeRecursive = "Recursive";

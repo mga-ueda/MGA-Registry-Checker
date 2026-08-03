@@ -6,6 +6,16 @@
 プログラミングの知識は不要です。下の「使い方」から始めてください。  
 コマンドライン連携・ビルド・内部仕様などは [上級者向け](#上級者向け) にまとめています。
 
+## 画面イメージ
+
+メイン画面（監視の登録・一覧）:
+
+![メイン画面](Assets/screenshots/main-window.png)
+
+差分画面（複数監視の変更をまとめて確認）:
+
+![差分画面](Assets/screenshots/diff-dialog.png)
+
 ## できること
 
 - 気になるレジストリの場所を登録して、そのときの状態を保存する
@@ -159,7 +169,6 @@ VS Code: `build` / `publish-single-file` タスク、起動構成「MGA Registry
 | REMOVE / Del | 確認後、監視エントリのみ削除（レジストリは変更しない） |
 | 余白クリック | 一覧の選択解除 |
 | Esc | アプリ終了 |
-| SIMULATE DIFF | **DEBUG ビルドのみ**表示。擬似差分ダイアログ。レジストリも `state.json` も変更しない |
 
 ### 監視モード
 
@@ -341,4 +350,3 @@ int code = p?.ExitCode ?? -1;
 - [ ] Key + subkeys: 直下サブキー追加が KeyAdded になる  
 - [ ] ACCEPT / REVERT / Mixed / CANCEL 後の `state.json` とレジストリ  
 - [ ] Esc で終了、メイン位置が次回復元される  
-- [ ] DEBUG の SIMULATE DIFF がレジストリを変更しない  

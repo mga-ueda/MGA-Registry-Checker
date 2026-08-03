@@ -62,10 +62,6 @@ public partial class MainWindow : Window
         // コンストラクタで読んだ状態を一覧へ反映（再読込で位置設定を上書きしない）
         RefreshList();
         StatusText.Text = UiText.StatusStateFile(_store.FilePath);
-#if DEBUG
-        if (SimulateDiffButton is not null)
-            SimulateDiffButton.Visibility = Visibility.Visible;
-#endif
         ValidateInput();
         UpdateSelectionActions();
 
@@ -322,7 +318,7 @@ public partial class MainWindow : Window
         {
             if (current is T match)
                 return match;
-            current = VisualTreeHelper.GetParent(current);
+            current = DependencyObjectTree.GetParent(current);
         }
 
         return null;
@@ -348,24 +344,5 @@ public partial class MainWindow : Window
                 e.Handled = true;
             }
         }
-    }
-
-    private void SimulateDiff_Click(object sender, RoutedEventArgs e)
-    {
-#if DEBUG
-        var diff = DiffSimulator.CreateRandom(_state.Locations);
-        var dlg = new DiffWindow(diff, simulateOnly: true) { Owner = this };
-        dlg.ShowDialog();
-
-        StatusText.Text = dlg.Result.Decision switch
-        {
-            DiffDecision.Accept => UiText.StatusSimAcceptAll(diff.Changes.Count),
-            DiffDecision.Revert => UiText.StatusSimRevertAll(diff.Changes.Count),
-            DiffDecision.Mixed => UiText.StatusSimMixed(
-                dlg.Result.Items.Count(x => x.Action == DiffItemAction.Accept),
-                dlg.Result.Items.Count(x => x.Action == DiffItemAction.Revert)),
-            _ => UiText.StatusSimCancel(diff.Changes.Count)
-        };
-#endif
     }
 }

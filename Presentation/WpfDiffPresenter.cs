@@ -9,10 +9,9 @@ public sealed class WpfDiffPresenter : IDiffPresenter
     public DiffDialogResult Show(
         IReadOnlyList<LocationDiff> diffs,
         object? ownerWindow,
-        Func<DiffDialogResult, bool>? tryCommit = null,
-        bool simulateOnly = false)
+        Func<DiffDialogResult, bool>? tryCommit = null)
     {
-        var dlg = new DiffWindow(diffs, tryCommit, simulateOnly);
+        var dlg = new DiffWindow(diffs, tryCommit);
         // Owner は前面表示のためだけ。位置は DiffWindow 側でプライマリ中央に固定する。
         if (ownerWindow is Window owner)
             dlg.Owner = owner;

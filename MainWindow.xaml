@@ -108,12 +108,6 @@
                 <DockPanel Grid.Row="1" Margin="0,10,0,0" LastChildFill="False"
                            Background="Transparent"
                            MouseLeftButtonDown="WatchedEmpty_OnMouseLeftButtonDown">
-                    <Button x:Name="SimulateDiffButton" DockPanel.Dock="Left"
-                            Content="{x:Static local:UiText.ButtonSimulateDiff}" Width="130" Height="28"
-                            Visibility="Collapsed"
-                            Style="{StaticResource SecondaryButton}"
-                            Click="SimulateDiff_Click"
-                            ToolTip="{x:Static local:UiText.TooltipSimulateDiff}"/>
                     <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
                         <Button x:Name="CheckNowButton" Content="{x:Static local:UiText.ButtonCheckNow}" Width="110" Height="28" Margin="0,0,10,0"
                                 IsEnabled="False"

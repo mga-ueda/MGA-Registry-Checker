@@ -12,6 +12,5 @@ public interface IDiffPresenter
     DiffDialogResult Show(
         IReadOnlyList<LocationDiff> diffs,
         object? ownerWindow,
-        Func<DiffDialogResult, bool>? tryCommit = null,
-        bool simulateOnly = false);
+        Func<DiffDialogResult, bool>? tryCommit = null);
 }

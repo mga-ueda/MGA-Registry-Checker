@@ -15,7 +15,6 @@ public partial class DiffWindow : Window
     public DiffDialogResult Result { get; private set; } = new();
 
     private readonly Func<DiffDialogResult, bool>? _tryCommit;
-    private readonly bool _simulateOnly;
     private readonly ObservableCollection<DiffItemVm> _items = [];
     private bool _updatingHeaders;
 
@@ -31,24 +30,14 @@ public partial class DiffWindow : Window
     private int _lastPaintedIndex = -1;
 
     public DiffWindow(
-        LocationDiff diff,
-        Func<DiffDialogResult, bool>? tryCommit = null,
-        bool simulateOnly = false)
-        : this([diff], tryCommit, simulateOnly)
-    {
-    }
-
-    public DiffWindow(
         IReadOnlyList<LocationDiff> diffs,
-        Func<DiffDialogResult, bool>? tryCommit = null,
-        bool simulateOnly = false)
+        Func<DiffDialogResult, bool>? tryCommit = null)
     {
         if (diffs is null || diffs.Count == 0)
             throw new ArgumentException("差分がありません。", nameof(diffs));
 
         InitializeComponent();
         _tryCommit = tryCommit;
-        _simulateOnly = simulateOnly;
 
         // メインの位置に関係なく、常にプライマリディスプレイ中央
         SourceInitialized += (_, _) => WindowPlacement.CenterOnPrimary(this);
@@ -76,21 +65,14 @@ public partial class DiffWindow : Window
         ChangeGrid.ItemsSource = _items;
         UpdateApplyEnabled();
 
-        if (_simulateOnly)
+        Title = UiText.TitleDiff;
+        if (watchCount == 1)
         {
-            Title = UiText.TitleDiffSimulation;
-            TitleText.Text = UiText.DiffDetectedSim(UiText.FormatWatchPath(diffs[0].Location));
-            SubText.Text = UiText.DiffSubTextSim(changeCount);
-        }
-        else if (watchCount == 1)
-        {
-            Title = UiText.TitleDiff;
             TitleText.Text = UiText.DiffDetected(UiText.FormatWatchPath(diffs[0].Location));
             SubText.Text = UiText.DiffSubText(changeCount);
         }
         else
         {
-            Title = UiText.TitleDiff;
             TitleText.Text = UiText.DiffDetectedMulti(watchCount);
             SubText.Text = UiText.DiffSubText(changeCount, watchCount);
         }
@@ -312,7 +294,7 @@ public partial class DiffWindow : Window
         var result = VisualTreeHelper.HitTest(ChangeGrid, position);
         for (var current = result?.VisualHit as DependencyObject;
              current != null;
-             current = VisualTreeHelper.GetParent(current))
+             current = DependencyObjectTree.GetParent(current))
         {
             if (current is DataGridRow row && row.Item is DiffItemVm item)
                 return item;
@@ -323,7 +305,7 @@ public partial class DiffWindow : Window
 
     private static (CheckBox CheckBox, PaintColumn Column)? FindTaggedCheckBox(DependencyObject? source)
     {
-        for (var current = source; current != null; current = VisualTreeHelper.GetParent(current))
+        for (var current = source; current != null; current = DependencyObjectTree.GetParent(current))
         {
             if (current is not CheckBox cb)
                 continue;
@@ -429,14 +411,6 @@ public partial class DiffWindow : Window
                 Action = i.Action
             })]
         };
-
-        if (_simulateOnly)
-        {
-            Result = dialogResult;
-            DialogResult = true;
-            Close();
-            return;
-        }
 
         if (_tryCommit is not null && !_tryCommit(dialogResult))
             return;
