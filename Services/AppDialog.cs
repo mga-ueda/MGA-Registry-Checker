@@ -13,26 +13,28 @@ public static class AppDialog
     private static SoundPlayer? _activePlayer;
 
     public static MessageBoxResult Show(
-        Window owner,
+        Window? owner,
         string message,
         string title,
         MessageBoxButton buttons,
         MessageBoxImage icon)
     {
         PlaySound(icon);
-        return MessageBox.Show(owner, message, title, buttons, icon);
+        return owner is null
+            ? MessageBox.Show(message, title, buttons, icon)
+            : MessageBox.Show(owner, message, title, buttons, icon);
     }
 
-    public static void Info(Window owner, string message, string? title = null) =>
+    public static void Info(Window? owner, string message, string? title = null) =>
         Show(owner, message, title ?? UiText.TitleInfo, MessageBoxButton.OK, MessageBoxImage.Information);
 
-    public static void Warning(Window owner, string message, string? title = null) =>
+    public static void Warning(Window? owner, string message, string? title = null) =>
         Show(owner, message, title ?? UiText.TitleWarning, MessageBoxButton.OK, MessageBoxImage.Warning);
 
-    public static void Error(Window owner, string message, string? title = null) =>
+    public static void Error(Window? owner, string message, string? title = null) =>
         Show(owner, message, title ?? UiText.TitleError, MessageBoxButton.OK, MessageBoxImage.Error);
 
-    public static MessageBoxResult Confirm(Window owner, string message, string? title = null) =>
+    public static MessageBoxResult Confirm(Window? owner, string message, string? title = null) =>
         Show(owner, message, title ?? UiText.TitleConfirm, MessageBoxButton.YesNo, MessageBoxImage.Question);
 
     private static void PlaySound(MessageBoxImage icon)

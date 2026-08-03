@@ -13,6 +13,7 @@ public partial class MainWindow : Window
 {
     private readonly SnapshotStore _store = new();
     private readonly RegistrySnapshotService _registry = new();
+    private readonly WatchDiffProcessor _diffProcessor;
     private AppState _state = new();
     private readonly ObservableCollection<LocationItem> _items = [];
     private bool _startupChecked;
@@ -25,6 +26,7 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        _diffProcessor = new WatchDiffProcessor(_registry, _store);
         Title = UiText.MainWindowTitle(GetAppVersion());
         LocationList.ItemsSource = _items;
         OkBrush.Freeze();
@@ -248,76 +250,13 @@ public partial class MainWindow : Window
 
     private void CheckLocations(IReadOnlyList<WatchedLocation> locations)
     {
-        var anyDiff = false;
-        foreach (var loc in locations)
-        {
-            LocationDiff diff;
-            try
-            {
-                StatusText.Text = UiText.StatusChecking(loc.Path);
-                diff = _registry.Compare(loc);
-            }
-            catch (Exception ex)
-            {
-                AppDialog.Error(this, UiText.MsgCompareFailed(loc.Path, ex.Message));
-                continue;
-            }
-
-            if (diff.Changes.Count == 0)
-                continue;
-
-            anyDiff = true;
-            var dlg = new DiffWindow(diff) { Owner = this };
-            dlg.ShowDialog();
-
-            switch (dlg.Decision)
-            {
-                case DiffWindow.DiffDecision.Accept:
-                    loc.Keys = diff.CurrentSnapshot;
-                    loc.CapturedAt = DateTime.Now;
-                    SaveState();
-                    StatusText.Text = UiText.StatusAccepted(loc.Path);
-                    break;
-                case DiffWindow.DiffDecision.Revert:
-                    try
-                    {
-                        loc.Keys = _registry.Capture(loc);
-                        loc.CapturedAt = DateTime.Now;
-                        SaveState();
-                        StatusText.Text = UiText.StatusReverted(loc.Path);
-                    }
-                    catch (Exception ex)
-                    {
-                        AppDialog.Warning(this, UiText.MsgRecaptureAfterRevertFailed(ex.Message));
-                    }
-                    break;
-                case DiffWindow.DiffDecision.Mixed:
-                    try
-                    {
-                        var accepted = dlg.ItemResults
-                            .Where(x => x.Action == DiffWindow.ItemAction.Accept)
-                            .Select(x => x.Change)
-                            .ToList();
-                        RegistrySnapshotService.AcceptChangesIntoSnapshot(loc, diff, accepted);
-                        SaveState();
-                        StatusText.Text = UiText.StatusMixedApplied(
-                            loc.Path,
-                            accepted.Count,
-                            dlg.ItemResults.Count(x => x.Action == DiffWindow.ItemAction.Revert));
-                    }
-                    catch (Exception ex)
-                    {
-                        AppDialog.Warning(this, UiText.MsgMixedApplyFailed(ex.Message));
-                    }
-                    break;
-                default:
-                    StatusText.Text = UiText.StatusSkipped(loc.Path);
-                    break;
-            }
-        }
-
-        if (!anyDiff)
-            StatusText.Text = UiText.StatusNoDifferences;
+        _diffProcessor.Process(
+            _state,
+            locations,
+            owner: this,
+            setStatus: text => StatusText.Text = text,
+            silent: false);
+        RefreshList();
     }
 
     private void LocationList_OnSelectionChanged(object sender, SelectionChangedEventArgs e) =>
