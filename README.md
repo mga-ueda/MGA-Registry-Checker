@@ -170,4 +170,4 @@ dotnet build MgaRegistryChecker.csproj -c Release
 
 ## ライセンス
 
-[MIT License](LICENSE) © 2026 Masami Ueda
+[MIT License](LICENSE) © 2026 MIYABI GAME AUDIO INC.
