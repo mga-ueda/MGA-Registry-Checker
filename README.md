@@ -114,7 +114,7 @@ Windows だけ必要です。別途 .NET を入れる必要はありません（
 
 ## 上級者向け
 
-開発・自動化・仕様の詳細です。一般利用だけなら上の説明で十分です。
+開発・自動化・内部仕様です。使い方の説明は上の一般向けを参照してください。
 
 ### 名前の対応
 
@@ -126,194 +126,48 @@ Windows だけ必要です。別途 .NET を入れる必要はありません（
 | 会社（著作権・Company） | MIYABI GAME AUDIO INC. |
 | バージョン（csproj） | `1.0.0` |
 
-### 必要環境
+### 開発環境・ビルド
 
 | 用途 | 要件 |
 |------|------|
-| リリース EXE の実行 | Windows（x64）。.NET の別インストール不要 |
 | 開発・`dotnet run` / `dotnet build` | Windows + .NET 8 SDK |
-| UI フレームワーク | WPF（`net8.0-windows`） |
-
-### ダウンロードと実行（EXE）
+| UI | WPF（`net8.0-windows`） |
 
 ```powershell
-& ".\MGA Registry Checker.exe"          # 通常起動（メイン画面）
-& ".\MGA Registry Checker.exe" --check  # 差分チェックのみ（後述）
-```
-
-### 開発時の実行・ビルド・単一 EXE 発行
-
-```powershell
-# 通常起動
 dotnet run --project MgaRegistryChecker.csproj -c Release
-
-# 差分チェックのみ
 dotnet run --project MgaRegistryChecker.csproj -c Release -- --check
-
-# ビルド
 dotnet build MgaRegistryChecker.csproj -c Release
-
-# self-contained 単一 EXE（win-x64）
 dotnet publish MgaRegistryChecker.csproj -c Release -r win-x64
 ```
 
-発行出力例:
+発行出力例: `.\bin\Release\net8.0-windows\win-x64\publish\MGA Registry Checker.exe`
 
-`.\bin\Release\net8.0-windows\win-x64\publish\MGA Registry Checker.exe`
+- `RuntimeIdentifier` 指定時の既定: `PublishSingleFile=true`、`SelfContained=true`（未指定時）、ネイティブライブラリ同梱、単一ファイル圧縮（初回起動時に一時展開あり）
+- VS Code: `build` / `publish-single-file` タスク、起動構成「MGA Registry Checker」
 
-- `RuntimeIdentifier` 指定時の既定: `PublishSingleFile=true`、`SelfContained=true`（未指定時）、ネイティブライブラリ同梱、単一ファイル圧縮  
-- 初回起動時に一時展開あり  
+### 起動フロー（実装）
 
-VS Code: `build` / `publish-single-file` タスク、起動構成「MGA Registry Checker」あり。
+**通常起動**
 
-### 通常起動の仕様
+1. `state.json` 読込 → メイン位置復元（無ければ中央）  
+2. Loaded 後（`ApplicationIdle`）に全監視を自動チェック  
+3. 閉じるときにメインの位置・サイズを `mainWindowBounds` へ保存  
 
-1. メインウィンドウを表示し、`state.json` を読み込む  
-2. 前回保存したメインウィンドウ位置があれば復元。なければ画面中央  
-3. Loaded 後（`ApplicationIdle`）に、登録済みの全監視を自動チェック  
-4. 差分があれば、全監視分をまとめた差分ダイアログを 1 回表示  
-5. Esc またはウィンドウ閉じるで終了。閉じるときにメインの位置・サイズを `state.json` に保存  
+**`--check`**
 
-常駐しないワンショット動作です。
+| 引数 | 別名（大文字小文字無視） |
+|------|--------------------------|
+| `--check` | `/check` `-check` `--silent-check` |
 
-### メイン画面の操作詳細
+1. メイン非表示（`ShutdownMode.OnExplicitShutdown`）  
+2. 監視ゼロ / 差分ゼロ → UI なしで終了コード `0`  
+3. 差分あり → 差分ダイアログ 1 回（`owner=null`）のあとメインなしで終了  
+4. 比較例外など → 終了コード `1`  
 
-| 操作 | 詳細 |
-|------|------|
-| Key / Value 入力 | リアルタイム検証。OK のときだけ ADD WATCH が有効 |
-| ADD WATCH | スナップショット取得して一覧に追加。同一 Path + Mode + ValueName（大文字小文字無視）は重複拒否 |
-| CHECK NOW | 選択中の 1 件だけ比較 |
-| RECAPTURE | 選択中のスナップショットを現在値で上書きして保存 |
-| REMOVE / Del | 確認後、監視エントリのみ削除（レジストリは変更しない） |
-| スタートアップで差分チェック | `HKCU\...\Run` に `"exe" --check` を登録 / 削除 |
-| 余白クリック | 一覧の選択解除 |
-| Esc | アプリ終了 |
-
-### 監視モード
-
-| Value 入力 | `WatchMode` | 一覧ラベル | 記録内容 |
-|------------|-------------|------------|----------|
-| 空 | `KeyOnly` | `Key + subkeys` | 直下の全 Value ＋ 直下 1 階層のサブキー名のみ（サブキーは存在監視。Values 空のスナップショット）。更深層は見ない |
-| あり | `SingleValue` | `Single value` | 指定した 1 Value のみ。値名が空文字のときはレジストリの既定値（表示名 `(Default)`） |
-
-#### 単一値の監視例
-
-| 項目 | 入力例 |
-|------|--------|
-| Key | `HKEY_CURRENT_USER\Control Panel\Desktop\WindowMetrics` |
-| Value | `BorderWidth` |
-
-Value を空にすると、シェルアイコンオーバーレイ定義などの「直下サブキー追加」検知にも使えます。
-
-### 入力検証・パス正規化
-
-- 対応ハイブ（正式名と略称。大文字小文字無視）:
-
-  | 正式名 | 略称 |
-  |--------|------|
-  | `HKEY_CLASSES_ROOT` | `HKCR` |
-  | `HKEY_CURRENT_USER` | `HKCU` |
-  | `HKEY_LOCAL_MACHINE` | `HKLM` |
-  | `HKEY_USERS` | `HKU` |
-  | `HKEY_CURRENT_CONFIG` | `HKCC` |
-
-- 保存・表示時は正式名に正規化  
-- Key は必須かつ存在必須。Value 指定時はその Value が存在すること  
-- Key・Value とも空のときはヒント表示のみ（ADD 不可）  
-
-### 差分の種類
-
-`DiffEngine` が検出する変更種別:
-
-| 種別 | 意味 |
-|------|------|
-| `KeyAdded` | スナップショットに無かったキーが出現 |
-| `KeyRemoved` | スナップショットにあったキーが消失 |
-| `ValueAdded` | 値が追加された |
-| `ValueRemoved` | 値が削除された |
-| `ValueModified` | 値の内容または型が変わった |
-
-監視ルート自体が消えた場合は、現在スナップショットが空になり、削除扱いの差分になり得ます。
-
-比較・保存時、`REG_EXPAND_SZ` は環境変数展開せず生データのまま扱います（`DoNotExpandEnvironmentNames`）。既定値は `GetValueNames` に出ない環境があるため、Capture 時に明示取得します。
-
-### 差分ダイアログの仕様
-
-- 差分のある監視場所が複数あっても、ダイアログは **1 回だけ**開き、全差分を一覧表示する  
-- 各行で ACCEPT / REVERT を選択（行単位で排他。同時オン不可）  
-- 全行が ACCEPT または REVERT のどちらかに付いたときだけ APPLY 有効  
-- 見出しチェックで列全体を一括選択可能  
-- **クリックしたままドラッグ**すると、隣の行へ連続して同じ ACCEPT / REVERT の ON/OFF を広げられる（押しっぱなしのドラッグ塗り）  
-- CANCEL / Esc: 何も適用せず閉じる → スナップショット未更新のため、次回も同じ差分が出る  
-- ウィンドウ位置: 常にプライマリディスプレイ中央。メイン位置とは独立で、位置は保存しない  
-- `--check` 時の owner は null（メイン非表示）  
-
-### スタートアップ登録
-
-メイン画面の「スタートアップで差分チェック」チェックボックスで制御する。ショートカット（`shell:startup`）は使わない。
-
-| 操作 | 内容 |
-|------|------|
-| ON | `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` に値名 `MGA Registry Checker`、データ `"<exe絶対パス>" --check` を書き込む |
-| OFF | 同名の値を削除する |
-
-ログオン時は `--check` と同じくメイン非表示で差分チェックし、差分がなければ無表示終了、あればダイアログのみ表示する。
-
-**注意:** 登録データはチェック時点の EXE 絶対パス。EXE の移動・リネーム後は古いパスのまま残るため起動に失敗する。チェック OFF→ON で再登録する。
-
-#### APPLY 後の副作用
-
-監視場所ごとに行を振り分け、その場所内の選択から Accept / Revert / Mixed を判定して適用する。最後に `state.json` を 1 回保存する。
-
-| Decision（監視ごと） | レジストリ | スナップショット（`state.json`） |
-|----------|------------|----------------------------------|
-| **Accept（その監視の全行 ACCEPT）** | 変更なし | `CurrentSnapshot` で置換、`CapturedAt` 更新 |
-| **Revert（その監視の全行 REVERT）** | スナップショットへ書き戻し（余分キー削除含む） | 再 Capture して保存 |
-| **Mixed** | REVERT 行だけ `RevertChanges` | ACCEPT 行だけスナップショットへ取り込み |
-| **Cancel** | なし | なし |
-
-#### Mixed 時の REVERT（行種別）
-
-| 種別 | REVERT 時のレジストリ操作 |
-|------|---------------------------|
-| KeyAdded | キー削除 |
-| KeyRemoved | スナップショットからキー復元 |
-| ValueAdded | 値削除 |
-| ValueRemoved / ValueModified | スナップショットの値を書き戻し |
-
-#### エラー時
-
-| 状況 | 挙動 |
-|------|------|
-| レジストリ書き込み失敗 | ダイアログを閉じない（commit 失敗） |
-| Revert / Mixed 後のスナップショット更新失敗 | Warning 表示。commit 成功扱いで閉じる場合あり |
-| Accept 後のスナップショット更新失敗 | エラー。閉じない |
-
-### コマンドライン（`--check`）
-
-| 引数 | 別名（大文字小文字無視） | 動作 |
-|------|--------------------------|------|
-| `--check` | `/check` `-check` `--silent-check` | メインを出さず、保存済み監視をすべて比較 |
-
-#### 挙動
-
-1. メインウィンドウは表示しない（`ShutdownMode.OnExplicitShutdown`）  
-2. `state.json` の監視一覧を読み込む  
-3. 監視ゼロ、または差分ゼロ → UI なしで終了コード `0`  
-4. 差分あり → 通常と同じ取捨選択ダイアログを 1 回表示（複数監視の差分はまとめて報告）  
-5. ダイアログ完了後もメインは出さず終了  
-6. 比較例外など → メッセージ表示、終了コード `1`（起動時 catch も `1`）  
-
-#### 終了コード
-
-| コード | 意味 |
-|--------|------|
-| `0` | 正常（差分なし、ダイアログ完了、Cancel 含む） |
-| `1` | 比較エラーなど処理中の問題 |
-
-差分の有無そのものは終了コードでは区別しません。
-
-#### 呼び出し例
+| 終了コード | 意味 |
+|------------|------|
+| `0` | 正常（差分なし、ダイアログ完了、Cancel 含む）。差分の有無は区別しない |
+| `1` | 比較エラーなど |
 
 ```powershell
 Start-Process -FilePath "C:\Path\MGA Registry Checker.exe" -ArgumentList "--check" -Wait -PassThru
@@ -330,43 +184,81 @@ p?.WaitForExit();
 int code = p?.ExitCode ?? -1;
 ```
 
-#### 連携時の注意
+`--check` だけでは監視追加不可。二重起動は `SingleInstanceGuard`（Mutex）で抑止し、追加起動は既存メインを前面化して終了する。
 
-- 先に通常起動で監視を登録しておくこと（`--check` だけでは追加不可）  
-- 複数監視に差分がある場合も、ダイアログは 1 回にまとめて表示する  
-- HKLM 等への REVERT には管理者権限が必要な場合あり  
-- 二重起動は Mutex で抑止する（`SingleInstanceGuard`）。追加起動は既存メインを前面化して終了  
+### 監視・検証（実装）
 
-### DPI
+| Value 入力 | `WatchMode` | 一覧ラベル | 記録内容 |
+|------------|-------------|------------|----------|
+| 空 | `KeyOnly` | `Key + subkeys` | 直下の全 Value ＋ 直下サブキー名のみ（Values 空のスナップショット） |
+| あり | `SingleValue` | `Single value` | 指定 1 Value。空文字名は既定値（表示 `(Default)`） |
 
-- プロジェクト設定: `ApplicationHighDpiMode=PerMonitorV2`  
-- レイアウトは WPF 論理ピクセル（DIP）。コントロールの Width/Height は DIP 指定のためスケールに追従する  
-- `UseLayoutRounding` / `SnapsToDevicePixels` でぼけを抑制  
-- テキストは `TextFormattingMode=Ideal`（高 DPI 向け）  
-- 差分ダイアログの列幅は `PixelsPerDip` で計測し、`DpiChanged` 時に再計算する  
+- 重複判定: Path + Mode + ValueName（大文字小文字無視）  
+- ハイブ略称: `HKCR` / `HKCU` / `HKLM` / `HKU` / `HKCC` → 正式名へ正規化  
+- Key 必須・存在必須。Value 指定時はその Value が存在すること  
+- `REG_EXPAND_SZ` は展開せず生で保存・比較（`DoNotExpandEnvironmentNames`）  
+- 既定値は Capture 時に明示取得（`GetValueNames` に出ない環境向け）  
+- 監視ルート消失時は現在スナップショット空 → 削除扱いの差分になり得る  
 
-### 状態ファイル（`state.json`）
+### 差分適用（実装）
+
+| 種別 | 意味 |
+|------|------|
+| `KeyAdded` / `KeyRemoved` | キーの出現・消失 |
+| `ValueAdded` / `ValueRemoved` / `ValueModified` | 値の追加・削除・内容または型の変更 |
+
+APPLY 時は監視ごとに行を振り分け、その場所内の選択から Accept / Revert / Mixed を判定。最後に `state.json` を 1 回保存。
+
+| Decision（監視ごと） | レジストリ | スナップショット |
+|----------|------------|------------------|
+| **Accept** | 変更なし | `CurrentSnapshot` で置換、`CapturedAt` 更新 |
+| **Revert** | スナップショットへ書き戻し（余分キー削除含む） | 再 Capture |
+| **Mixed** | REVERT 行だけ `RevertChanges` | ACCEPT 行だけ取り込み |
+| **Cancel** | なし | なし |
+
+Mixed の REVERT: KeyAdded→キー削除、KeyRemoved→復元、ValueAdded→値削除、ValueRemoved/Modified→スナップショット値を書き戻し。
+
+| エラー | 挙動 |
+|--------|------|
+| レジストリ書き込み失敗 | ダイアログを閉じない |
+| Revert / Mixed 後のスナップショット更新失敗 | Warning。閉じる場合あり |
+| Accept 後のスナップショット更新失敗 | エラー。閉じない |
+
+差分ウィンドウ位置は常にプライマリ中央（非保存）。
+
+### スタートアップ登録（実装）
+
+| 操作 | 内容 |
+|------|------|
+| ON | `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` に値名 `MGA Registry Checker`、データ `"<exe絶対パス>" --check` |
+| OFF | 同名の値を削除 |
+
+（EXE 移動時の再登録は一般向けの注意を参照）
+
+### 永続化・ウィンドウ
 
 | 項目 | 内容 |
 |------|------|
 | パス | `%LocalAppData%\MGA\MGA Registry Checker\state.json` |
-| 会社フォルダ | `MGA` |
-| アプリフォルダ | `MGA Registry Checker` |
 | 形式 | JSON（インデント、camelCase、enum は文字列） |
-| 主な内容 | `locations[]`（監視エントリとスナップショット）、任意で `mainWindowBounds` |
-
-`WatchedLocation` の主なフィールド: `id`, `path`, `valueName`, `mode`, `capturedAt`, `keys`。
-
-### ウィンドウ位置
+| 内容 | `locations[]`（`id`, `path`, `valueName`, `mode`, `capturedAt`, `keys`）、任意で `mainWindowBounds` |
+| 旧 `mode: Recursive` | 読込時に `KeyOnly` へ変換 |
 
 | ウィンドウ | 位置 |
 |------------|------|
-| メイン | `mainWindowBounds` に保存・復元（最大化フラグ含む）。無ければ中央 |
-| 差分 | 常にプライマリ中央。非保存 |
+| メイン | `mainWindowBounds`（最大化フラグ含む）。無ければ中央 |
+| 差分 | プライマリ中央。非保存 |
 
 ダークタイトルバー対応あり。
 
-### プロジェクト構成（開発者向け）
+### DPI（実装）
+
+- `ApplicationHighDpiMode=PerMonitorV2`  
+- `UseLayoutRounding` / `SnapsToDevicePixels`  
+- `TextFormattingMode=Ideal`  
+- 差分ダイアログ列幅は `PixelsPerDip` 計測、`DpiChanged` で再計算  
+
+### プロジェクト構成
 
 | 領域 | 主な型 / 配置 |
 |------|----------------|
@@ -375,7 +267,7 @@ int code = p?.ExitCode ?? -1;
 | レジストリ I/O | `RegistrySnapshotService` / `RegistryPathHelper` / `RegistryValueCodec` |
 | 比較 | `DiffEngine` / `RegistryValueDisplay` |
 | 永続化 | `SnapshotStore` / `AppPaths` / `AppJsonContext` |
-| スタートアップ | `StartupRegistration`（HKCU Run + `--check`） |
+| スタートアップ | `StartupRegistration` |
 | 二重起動防止 | `SingleInstanceGuard` |
 | UI | `MainWindow` / `DiffWindow` / `ViewModels/*` / `Themes/*` |
 | 文言 | `UiText` |
@@ -390,3 +282,4 @@ int code = p?.ExitCode ?? -1;
 - [ ] Esc で終了、メイン位置が次回復元される  
 - [ ] スタートアップ ON → Run キーに `"exe" --check` が入り、OFF で消える  
 - [ ] 差分ダイアログでクリック＋ドラッグにより連続チェックできる  
+- [ ] 二重起動時に既存メインが前面化される  
