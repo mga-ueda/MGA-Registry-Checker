@@ -1,6 +1,5 @@
 using System.Collections.ObjectModel;
 using System.IO;
-using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -31,7 +30,7 @@ public partial class MainWindow : Window
         InitializeComponent();
         var apply = new DiffApplyService(_store);
         _diffSession = new DiffSession(apply, new WpfDiffPresenter());
-        Title = UiText.MainWindowTitle(GetAppVersion());
+        Title = UiText.MainWindowTitle(AppVersion.GetDisplayVersion());
         LocationList.ItemsSource = _items;
         OkBrush.Freeze();
         NgBrush.Freeze();
@@ -42,20 +41,6 @@ public partial class MainWindow : Window
         // 位置復元は表示前に行う（初回は画面中央）
         _state = _store.Load();
         WindowPlacement.Apply(this, _state.MainWindowBounds);
-    }
-
-    private static string GetAppVersion()
-    {
-        var asm = Assembly.GetExecutingAssembly();
-        var info = asm.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
-        if (!string.IsNullOrWhiteSpace(info))
-        {
-            var plus = info.IndexOf('+', StringComparison.Ordinal);
-            return plus >= 0 ? info[..plus] : info;
-        }
-
-        var ver = asm.GetName().Version;
-        return ver is null ? "1.0.0" : $"{ver.Major}.{ver.Minor}.{ver.Build}";
     }
 
     private void Window_OnLoaded(object sender, RoutedEventArgs e)

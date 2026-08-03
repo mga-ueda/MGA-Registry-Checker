@@ -81,6 +81,7 @@ public static class UiText
     public const string TitleWarning = "警告";
     public const string TitleError = "エラー";
     public const string TitleConfirm = "確認";
+    public const string TitleUpdate = "新しいバージョン";
     public const string TitleRestoreError = "復元エラー";
     public const string TitleDiff = "レジストリの変更";
 
@@ -136,6 +137,12 @@ public static class UiText
             : $"{watchCount} 監視場所 / {changeCount} 件の差異があります。全行を ACCEPT（青）または REVERT（赤）に設定すると APPLY が有効になります。見出しで全選択可。チェックを押しながらドラッグすると連続 ON/OFF できます。CANCEL は何もせず閉じます（次回も通知されます）。";
 
     // ----- MessageBox 本文 -----
+    public static string MsgUpdateAvailable(string currentVersion, string latestVersion) =>
+        $"新しいバージョンが公開されています。\n\n現在: {currentVersion}\n最新: {latestVersion}\n\nGitHub のダウンロードページを開きますか？";
+
+    public static string MsgOpenReleasePageFailed(string detail) =>
+        $"ダウンロードページを開けませんでした。\n{detail}";
+
     public const string MsgInputInvalid =
         "入力が不正です。Key と Value を確認してください。";
 

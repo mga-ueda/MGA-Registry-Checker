@@ -46,6 +46,7 @@ Windows だけ必要です。別途 .NET を入れる必要はありません（
 ### 3. 差分を確認する
 
 - アプリを起動すると、登録済みの場所を自動でチェックします  
+- 起動時に GitHub 上の新しいバージョンがあればお知らせし、ダウンロードページを開くか選べます（通常起動・スタートアップ時の裏起動どちらでも）  
 - 一覧から行を選んで **CHECK NOW** でも、その場所だけ再チェックできます  
 - 違いがなければ何も起きません。違いがあれば差分画面が **1 回**出ます（複数の監視で違いがあってもまとめて表示）  
 
@@ -70,7 +71,8 @@ Windows だけ必要です。別途 .NET を入れる必要はありません（
 メイン画面左下の **「スタートアップで差分チェック」** にチェックを入れると、Windows にログオンしたときにアプリが裏で起動します。
 
 - メイン画面は出ません（`--check` と同じ動き）  
-- 差分がなければ何も表示せず終了します  
+- 新しいバージョンがあれば、差分チェックの前にお知らせダイアログが出ます  
+- 差分がなければ（バージョン通知のあとは）何も表示せず終了します  
 - 差分があれば取捨選択ダイアログだけ出ます  
 - チェックを外すと、スタートアップ登録は削除されます  
 
@@ -147,6 +149,12 @@ dotnet publish MgaRegistryChecker.csproj -c Release -r win-x64
 
 ### 起動フロー（実装）
 
+**バージョン確認（通常 / `--check` 共通）**
+
+- GitHub Releases API（`.../releases/latest`）で最新タグを取得（タイムアウト約 5 秒）  
+- 実行中の `InformationalVersion` より新しければ確認ダイアログ → Yes でリリースページ（`html_url`）を開く  
+- オフライン・API 失敗時は黙ってスキップ（`UpdateChecker`）  
+
 **通常起動**
 
 1. `state.json` 読込 → メイン位置復元（無ければ中央）  
@@ -159,10 +167,11 @@ dotnet publish MgaRegistryChecker.csproj -c Release -r win-x64
 |------|--------------------------|
 | `--check` | `/check` `-check` `--silent-check` |
 
-1. メイン非表示（`ShutdownMode.OnExplicitShutdown`）  
-2. 監視ゼロ / 差分ゼロ → UI なしで終了コード `0`  
-3. 差分あり → 差分ダイアログ 1 回（`owner=null`）のあとメインなしで終了  
-4. 比較例外など → 終了コード `1`  
+1. バージョン確認（上記）  
+2. メイン非表示（`ShutdownMode.OnExplicitShutdown`）  
+3. 監視ゼロ / 差分ゼロ → UI なしで終了コード `0`  
+4. 差分あり → 差分ダイアログ 1 回（`owner=null`）のあとメインなしで終了  
+5. 比較例外など → 終了コード `1`  
 
 | 終了コード | 意味 |
 |------------|------|
@@ -263,6 +272,7 @@ Mixed の REVERT: KeyAdded→キー削除、KeyRemoved→復元、ValueAdded→�
 | 領域 | 主な型 / 配置 |
 |------|----------------|
 | 起動 | `App`（通常 UI / `--check`） |
+| バージョン確認 | `UpdateChecker` / `AppVersion`（GitHub Releases） |
 | 差分オーケストレーション | `DiffSession` + `DiffApplyService` + `IDiffPresenter` |
 | レジストリ I/O | `RegistrySnapshotService` / `RegistryPathHelper` / `RegistryValueCodec` |
 | 比較 | `DiffEngine` / `RegistryValueDisplay` |
@@ -275,7 +285,9 @@ Mixed の REVERT: KeyAdded→キー削除、KeyRemoved→復元、ValueAdded→�
 ### 手動確認チェックリスト
 
 - [ ] 通常起動 → メイン表示 → 起動時に全監視をチェック  
-- [ ] `--check` → 差分なしなら無表示で終了コード 0  
+- [ ] 新しいリリースがあるとき、起動時に更新確認ダイアログ → Yes で GitHub リリースページ  
+- [ ] `--check` → 差分なしなら無表示で終了コード 0（更新が無ければ）  
+- [ ] `--check` → 更新ありなら差分チェック前にダイアログ  
 - [ ] `--check` → 差分ありなら取捨選択ダイアログのみ（メイン非表示）  
 - [ ] Key + subkeys: 直下サブキー追加が KeyAdded になる  
 - [ ] ACCEPT / REVERT / Mixed / CANCEL 後の `state.json` とレジストリ  
