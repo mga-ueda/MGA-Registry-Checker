@@ -167,3 +167,7 @@ dotnet build MgaRegistryChecker.csproj -c Release
 
 - アクセス権のないサブキーはスキップされます
 - DEBUG ビルドでは SIMULATE DIFF ボタンが使えます（レジストリは変更しません）
+
+## ライセンス
+
+[MIT License](LICENSE) © 2026 Masami Ueda
