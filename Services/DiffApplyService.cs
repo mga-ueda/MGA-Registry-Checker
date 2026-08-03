@@ -9,31 +9,6 @@ public sealed class DiffApplyService(SnapshotStore store)
 {
     private readonly SnapshotStore _store = store;
 
-    /// <summary>複数監視分の差分結果を一括適用し、最後に 1 回だけ保存する。</summary>
-    public void ApplyBatch(AppState state, IReadOnlyList<LocationDiff> diffs, DiffDialogResult result)
-    {
-        if (result.Decision == DiffDecision.Cancel || diffs.Count == 0)
-            return;
-
-        foreach (var diff in diffs)
-        {
-            var sliced = SliceForLocation(result, diff);
-            if (sliced.Items.Count == 0 || sliced.Decision == DiffDecision.Cancel)
-                continue;
-            ApplyRegistryWrites(diff, sliced);
-        }
-
-        foreach (var diff in diffs)
-        {
-            var sliced = SliceForLocation(result, diff);
-            if (sliced.Items.Count == 0 || sliced.Decision == DiffDecision.Cancel)
-                continue;
-            ApplySnapshotUpdate(state, diff, sliced, save: false);
-        }
-
-        _store.Save(state);
-    }
-
     public void Save(AppState state) => _store.Save(state);
 
     /// <summary>REVERT / Mixed のレジストリ書き戻し。失敗時は例外。</summary>
@@ -56,12 +31,8 @@ public sealed class DiffApplyService(SnapshotStore store)
             RegistrySnapshotService.RevertChanges(diff.Location, toRevert);
     }
 
-    /// <summary>スナップショット更新。失敗時は例外。</summary>
-    public void ApplySnapshotUpdate(
-        AppState state,
-        LocationDiff diff,
-        DiffDialogResult result,
-        bool save = true)
+    /// <summary>スナップショット更新（保存はしない）。失敗時は例外。</summary>
+    public static void ApplySnapshotUpdate(LocationDiff diff, DiffDialogResult result)
     {
         var loc = diff.Location;
 
@@ -87,9 +58,6 @@ public sealed class DiffApplyService(SnapshotStore store)
             default:
                 return;
         }
-
-        if (save)
-            _store.Save(state);
     }
 
     public static DiffDialogResult SliceForLocation(DiffDialogResult overall, LocationDiff diff)

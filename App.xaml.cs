@@ -6,9 +6,24 @@ namespace MgaRegistryChecker;
 
 public partial class App : Application
 {
+    private SingleInstanceGuard? _singleInstance;
+
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+
+        _singleInstance = SingleInstanceGuard.TryAcquire();
+        if (_singleInstance is null)
+        {
+            Shutdown(0);
+            return;
+        }
+
+        Exit += (_, _) =>
+        {
+            _singleInstance?.Dispose();
+            _singleInstance = null;
+        };
 
         if (AppLaunchArgs.IsCheckOnly(e.Args))
         {
@@ -18,6 +33,7 @@ public partial class App : Application
 
         var main = new MainWindow();
         MainWindow = main;
+        _singleInstance.StartActivateListener(() => SingleInstanceGuard.ActivateWindow(MainWindow));
         main.Show();
     }
 

@@ -105,7 +105,7 @@ public sealed class DiffSession(
                 var sliced = DiffApplyService.SliceForLocation(result, diff);
                 if (sliced.Items.Count == 0 || sliced.Decision == DiffDecision.Cancel)
                     continue;
-                _apply.ApplySnapshotUpdate(state, diff, sliced, save: false);
+                DiffApplyService.ApplySnapshotUpdate(diff, sliced);
             }
 
             _apply.Save(state);

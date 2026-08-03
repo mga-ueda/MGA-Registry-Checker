@@ -17,6 +17,7 @@ public static class UiText
     // ----- メイン画面ラベル -----
     public const string LabelKey = "Key:";
     public const string LabelValue = "Value:";
+    public const string LabelStartupCheck = "スタートアップで差分チェック";
     public const string ButtonAddWatch = "ADD WATCH";
     public const string ButtonCheckNow = "CHECK NOW";
     public const string ButtonRecapture = "RECAPTURE";
@@ -41,6 +42,9 @@ public static class UiText
 
     public const string TooltipRemove =
         "選択中の場所の監視を削除します（Del キーでも実行できます）。レジストリ自体は変更しません";
+
+    public const string TooltipStartupCheck =
+        "ログオン時に --check で起動（メイン画面なし）。EXE を移動したら OFF→ON で再登録。ショートカットではなくレジストリに登録します";
 
     public const string TooltipWatchList =
         "監視中のレジストリ場所一覧です。行を選択すると確認・再取得・削除が有効になります。余白クリックで選択解除";
@@ -128,8 +132,8 @@ public static class UiText
 
     public static string DiffSubText(int changeCount, int watchCount = 1) =>
         watchCount <= 1
-            ? $"{changeCount} 件の差異があります。全行を ACCEPT（青）または REVERT（赤）に設定すると APPLY が有効になります。見出しで全選択可。CANCEL は何もせず閉じます（次回も通知されます）。"
-            : $"{watchCount} 監視場所 / {changeCount} 件の差異があります。全行を ACCEPT（青）または REVERT（赤）に設定すると APPLY が有効になります。見出しで全選択可。CANCEL は何もせず閉じます（次回も通知されます）。";
+            ? $"{changeCount} 件の差異があります。全行を ACCEPT（青）または REVERT（赤）に設定すると APPLY が有効になります。見出しで全選択可。チェックを押しながらドラッグすると連続 ON/OFF できます。CANCEL は何もせず閉じます（次回も通知されます）。"
+            : $"{watchCount} 監視場所 / {changeCount} 件の差異があります。全行を ACCEPT（青）または REVERT（赤）に設定すると APPLY が有効になります。見出しで全選択可。チェックを押しながらドラッグすると連続 ON/OFF できます。CANCEL は何もせず閉じます（次回も通知されます）。";
 
     // ----- MessageBox 本文 -----
     public const string MsgInputInvalid =
@@ -137,6 +141,9 @@ public static class UiText
 
     public const string MsgAlreadyWatched =
         "この場所はすでに監視中です。";
+
+    public static string MsgStartupToggleFailed(string detail) =>
+        $"スタートアップ登録の更新に失敗しました。\n{detail}";
 
     public static string MsgCaptureFailed(string detail) =>
         $"スナップショットの取得に失敗しました。\n{detail}";
@@ -169,6 +176,12 @@ public static class UiText
     public static string ErrCouldNotCreateKey(string path) =>
         $"レジストリキーを作成できません: {path}";
 
+    public const string ErrStartupRegistryUnavailable =
+        "スタートアップ用のレジストリキーを開けませんでした。";
+
+    public const string ErrStartupExePathUnknown =
+        "実行ファイルの場所を特定できませんでした。スタートアップ登録に失敗しました。";
+
     // ----- ステータス欄 -----
     public static string StatusStateFile(string path) =>
         $"状態ファイル: {path}";
@@ -177,6 +190,9 @@ public static class UiText
     public const string StatusAddFailed = "追加に失敗しました";
     public const string StatusNoWatches = "監視中の場所がありません";
     public const string StatusNoDifferences = "差異はありません";
+    public const string StatusStartupEnabled =
+        "スタートアップに登録しました（いまの EXE パスでログオン時に --check）。移動したら再登録してください";
+    public const string StatusStartupDisabled = "スタートアップ登録を削除しました";
 
     public static string StatusAdded(string label) =>
         $"追加しました: {label}";
@@ -226,7 +242,6 @@ public static class UiText
             : location.Path;
 
     // ----- 監視リスト表示 -----
-    public const string ModeRecursive = "Recursive";
     public const string ModeKeyOnly = "Key + subkeys";
     public const string ModeSingleValue = "Single value";
     public const string CountOneValue = "1 value";

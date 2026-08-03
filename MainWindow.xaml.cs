@@ -18,8 +18,9 @@ public partial class MainWindow : Window
     private readonly DiffSession _diffSession;
     private readonly AppState _state = new();
     private readonly ObservableCollection<WatchedLocationItem> _items = [];
-    private bool _startupChecked;
+    private bool _startupDiffChecked;
     private bool _inputValid;
+    private bool _suppressStartupToggle;
 
     private static readonly Brush OkBrush = new SolidColorBrush(Color.FromRgb(0x34, 0xA8, 0x53));
     private static readonly Brush NgBrush = new SolidColorBrush(Color.FromRgb(0xD9, 0x30, 0x25));
@@ -62,14 +63,48 @@ public partial class MainWindow : Window
         // コンストラクタで読んだ状態を一覧へ反映（再読込で位置設定を上書きしない）
         RefreshList();
         StatusText.Text = UiText.StatusStateFile(_store.FilePath);
+        SyncStartupCheckBox();
         ValidateInput();
         UpdateSelectionActions();
 
-        if (_startupChecked)
+        if (_startupDiffChecked)
             return;
 
-        _startupChecked = true;
+        _startupDiffChecked = true;
         Dispatcher.BeginInvoke(CheckAllDifferences, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+    }
+
+    private void SyncStartupCheckBox()
+    {
+        _suppressStartupToggle = true;
+        try
+        {
+            StartupCheckBox.IsChecked = StartupRegistration.IsEnabled();
+        }
+        finally
+        {
+            _suppressStartupToggle = false;
+        }
+    }
+
+    private void StartupCheckBox_OnChanged(object sender, RoutedEventArgs e)
+    {
+        if (_suppressStartupToggle || StartupCheckBox is null)
+            return;
+
+        var enable = StartupCheckBox.IsChecked == true;
+        try
+        {
+            StartupRegistration.SetEnabled(enable);
+            StatusText.Text = enable
+                ? UiText.StatusStartupEnabled
+                : UiText.StatusStartupDisabled;
+        }
+        catch (Exception ex)
+        {
+            AppDialog.Error(this, UiText.MsgStartupToggleFailed(ex.Message));
+            SyncStartupCheckBox();
+        }
     }
 
     private void Window_OnClosing(object sender, System.ComponentModel.CancelEventArgs e)
@@ -289,7 +324,7 @@ public partial class MainWindow : Window
 
     private void LocationList_OnPreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
-        if (FindAncestor<ListBoxItem>(e.OriginalSource as DependencyObject) is not null)
+        if (DependencyObjectTree.FindAncestor<ListBoxItem>(e.OriginalSource as DependencyObject) is not null)
             return;
 
         ClearLocationSelection();
@@ -298,9 +333,11 @@ public partial class MainWindow : Window
 
     private void WatchedEmpty_OnMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
-        if (FindAncestor<Button>(e.OriginalSource as DependencyObject) is not null)
+        if (DependencyObjectTree.FindAncestor<Button>(e.OriginalSource as DependencyObject) is not null)
             return;
-        if (FindAncestor<ListBoxItem>(e.OriginalSource as DependencyObject) is not null)
+        if (DependencyObjectTree.FindAncestor<CheckBox>(e.OriginalSource as DependencyObject) is not null)
+            return;
+        if (DependencyObjectTree.FindAncestor<ListBoxItem>(e.OriginalSource as DependencyObject) is not null)
             return;
 
         ClearLocationSelection();
@@ -310,18 +347,6 @@ public partial class MainWindow : Window
     {
         LocationList.SelectedItem = null;
         UpdateSelectionActions();
-    }
-
-    private static T? FindAncestor<T>(DependencyObject? current) where T : DependencyObject
-    {
-        while (current is not null)
-        {
-            if (current is T match)
-                return match;
-            current = DependencyObjectTree.GetParent(current);
-        }
-
-        return null;
     }
 
     private void Window_OnPreviewKeyDown(object sender, KeyEventArgs e)

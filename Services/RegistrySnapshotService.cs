@@ -9,7 +9,7 @@ public static class RegistrySnapshotService
     public static List<RegistryKeySnapshot> Capture(WatchedLocation location) =>
         Capture(location.Path, location.Mode, location.ValueName);
 
-    public static List<RegistryKeySnapshot> Capture(string path, WatchMode mode, string? valueName = null)
+    private static List<RegistryKeySnapshot> Capture(string path, WatchMode mode, string? valueName = null)
     {
         path = RegistryPathHelper.Normalize(path);
         var result = new List<RegistryKeySnapshot>();
@@ -21,7 +21,7 @@ public static class RegistrySnapshotService
             return result;
         }
 
-        CaptureKey(path, key, mode, result);
+        CaptureKeyOnly(path, key, result);
         return result;
     }
 
@@ -48,7 +48,7 @@ public static class RegistrySnapshotService
         result.Add(snapshot);
     }
 
-    private static void CaptureKey(string fullPath, RegistryKey key, WatchMode mode, List<RegistryKeySnapshot> result)
+    private static void CaptureKeyOnly(string fullPath, RegistryKey key, List<RegistryKeySnapshot> result)
     {
         var snapshot = new RegistryKeySnapshot { Path = fullPath };
         foreach (var name in key.GetValueNames())
@@ -87,40 +87,14 @@ public static class RegistrySnapshotService
         snapshot.Values = [.. snapshot.Values.OrderBy(v => v.Name, StringComparer.OrdinalIgnoreCase)];
         result.Add(snapshot);
 
-        if (mode == WatchMode.KeyOnly)
-        {
-            // 1階層のサブキー名のみ（存在監視）。中身やそれより深い階層は見ない。
-            foreach (var subName in key.GetSubKeyNames().OrderBy(n => n, StringComparer.OrdinalIgnoreCase))
-            {
-                result.Add(new RegistryKeySnapshot
-                {
-                    Path = RegistryPathHelper.Combine(fullPath, subName),
-                    Values = []
-                });
-            }
-
-            return;
-        }
-
-        if (mode != WatchMode.Recursive)
-            return;
-
+        // 1階層のサブキー名のみ（存在監視）。中身やそれより深い階層は見ない。
         foreach (var subName in key.GetSubKeyNames().OrderBy(n => n, StringComparer.OrdinalIgnoreCase))
         {
-            try
+            result.Add(new RegistryKeySnapshot
             {
-                using var sub = key.OpenSubKey(subName);
-                if (sub is null)
-                    continue;
-                CaptureKey(RegistryPathHelper.Combine(fullPath, subName), sub, mode, result);
-            }
-            catch (System.Security.SecurityException)
-            {
-                // アクセスできないキーはスキップ
-            }
-            catch (UnauthorizedAccessException)
-            {
-            }
+                Path = RegistryPathHelper.Combine(fullPath, subName),
+                Values = []
+            });
         }
     }
 
@@ -157,8 +131,8 @@ public static class RegistrySnapshotService
 
         var targetPaths = location.Keys.Select(k => k.Path).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-        // スナップショットに無いキーを削除（Recursive は深い階層、KeyOnly は直下1階層分）
-        if (location.Mode is WatchMode.Recursive or WatchMode.KeyOnly)
+        // KeyOnly: スナップショットに無い直下キーを削除
+        if (location.Mode == WatchMode.KeyOnly)
         {
             List<RegistryKeySnapshot> current;
             try

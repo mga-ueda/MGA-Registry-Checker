@@ -11,8 +11,6 @@
         <Color x:Key="CheckHoverColor">#FF5ED4C8</Color>
         <Color x:Key="RecaptureColor">#FFE6A23C</Color>
         <Color x:Key="RecaptureHoverColor">#FFF0B85A</Color>
-        <Color x:Key="NeutralColor">#FF9B8CDB</Color>
-        <Color x:Key="NeutralHoverColor">#FFB5A8EB</Color>
         <Color x:Key="DangerColor">#FFD93025</Color>
         <Color x:Key="DangerHoverColor">#FFE35D54</Color>
         <Color x:Key="InputBgColor">#FF2C313A</Color>
@@ -22,8 +20,6 @@
         <Color x:Key="BtnCheckFillHoverColor">#FF243834</Color>
         <Color x:Key="BtnRecaptureFillColor">#FF2E2614</Color>
         <Color x:Key="BtnRecaptureFillHoverColor">#FF3A3018</Color>
-        <Color x:Key="BtnNeutralFillColor">#FF242030</Color>
-        <Color x:Key="BtnNeutralFillHoverColor">#FF2E2A3C</Color>
         <Color x:Key="BtnDangerFillColor">#FF2A1C1C</Color>
         <Color x:Key="BtnDangerFillHoverColor">#FF382626</Color>
         <Color x:Key="GrayColor">#FF9AA0A6</Color>
@@ -42,8 +38,6 @@
         <SolidColorBrush x:Key="CheckHoverBrush" Color="{StaticResource CheckHoverColor}"/>
         <SolidColorBrush x:Key="RecaptureBrush" Color="{StaticResource RecaptureColor}"/>
         <SolidColorBrush x:Key="RecaptureHoverBrush" Color="{StaticResource RecaptureHoverColor}"/>
-        <SolidColorBrush x:Key="NeutralBrush" Color="{StaticResource NeutralColor}"/>
-        <SolidColorBrush x:Key="NeutralHoverBrush" Color="{StaticResource NeutralHoverColor}"/>
         <SolidColorBrush x:Key="DangerBrush" Color="{StaticResource DangerColor}"/>
         <SolidColorBrush x:Key="DangerHoverBrush" Color="{StaticResource DangerHoverColor}"/>
         <SolidColorBrush x:Key="InputBgBrush" Color="{StaticResource InputBgColor}"/>
@@ -53,8 +47,6 @@
         <SolidColorBrush x:Key="BtnCheckFillHoverBrush" Color="{StaticResource BtnCheckFillHoverColor}"/>
         <SolidColorBrush x:Key="BtnRecaptureFillBrush" Color="{StaticResource BtnRecaptureFillColor}"/>
         <SolidColorBrush x:Key="BtnRecaptureFillHoverBrush" Color="{StaticResource BtnRecaptureFillHoverColor}"/>
-        <SolidColorBrush x:Key="BtnNeutralFillBrush" Color="{StaticResource BtnNeutralFillColor}"/>
-        <SolidColorBrush x:Key="BtnNeutralFillHoverBrush" Color="{StaticResource BtnNeutralFillHoverColor}"/>
         <SolidColorBrush x:Key="BtnDangerFillBrush" Color="{StaticResource BtnDangerFillColor}"/>
         <SolidColorBrush x:Key="BtnDangerFillHoverBrush" Color="{StaticResource BtnDangerFillHoverColor}"/>
         <SolidColorBrush x:Key="GrayBrush" Color="{StaticResource GrayColor}"/>

@@ -21,4 +21,16 @@ public static class DependencyObjectTree
 
         return LogicalTreeHelper.GetParent(current);
     }
+
+    public static T? FindAncestor<T>(DependencyObject? current) where T : DependencyObject
+    {
+        while (current is not null)
+        {
+            if (current is T match)
+                return match;
+            current = GetParent(current);
+        }
+
+        return null;
+    }
 }

@@ -76,6 +76,12 @@ public partial class DiffWindow : Window
             TitleText.Text = UiText.DiffDetectedMulti(watchCount);
             SubText.Text = UiText.DiffSubText(changeCount, watchCount);
         }
+
+        DpiChanged += (_, _) =>
+        {
+            if (ChangeGrid.IsLoaded)
+                OptimizeColumnWidths();
+        };
     }
 
     private void ChangeGrid_OnLoaded(object sender, RoutedEventArgs e)
@@ -379,17 +385,13 @@ public partial class DiffWindow : Window
         if (!_items.All(i => i.Action is DiffItemAction.Accept or DiffItemAction.Revert))
             return;
 
-        var distinct = _items.Select(i => i.Action).Distinct().ToList();
-        var decision = distinct.Count == 1
-            ? distinct[0] switch
-            {
-                DiffItemAction.Accept => DiffDecision.Accept,
-                DiffItemAction.Revert => DiffDecision.Revert,
-                _ => DiffDecision.Cancel
-            }
-            : DiffDecision.Mixed;
-
-        Finish(decision);
+        var choices = _items.Select(i => new DiffItemChoice
+        {
+            LocationId = i.LocationId,
+            Change = i.Change,
+            Action = i.Action
+        }).ToList();
+        Finish(DiffApplyService.DecisionFromItems(choices), choices);
     }
 
     private void Cancel_Click(object sender, RoutedEventArgs e)
@@ -399,12 +401,12 @@ public partial class DiffWindow : Window
         Close();
     }
 
-    private void Finish(DiffDecision decision)
+    private void Finish(DiffDecision decision, IReadOnlyList<DiffItemChoice>? items = null)
     {
         var dialogResult = new DiffDialogResult
         {
             Decision = decision,
-            Items = [.. _items.Select(i => new DiffItemChoice
+            Items = items ?? [.. _items.Select(i => new DiffItemChoice
             {
                 LocationId = i.LocationId,
                 Change = i.Change,

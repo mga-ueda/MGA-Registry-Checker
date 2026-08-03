@@ -8,7 +8,6 @@ public sealed class WatchedLocationItem(WatchedLocation location)
     public string DisplayPath { get; } = UiText.FormatWatchPath(location);
     public string ModeLabel { get; } = location.Mode switch
     {
-        WatchMode.Recursive => UiText.ModeRecursive,
         WatchMode.KeyOnly => UiText.ModeKeyOnly,
         WatchMode.SingleValue => UiText.ModeSingleValue,
         _ => location.Mode.ToString()

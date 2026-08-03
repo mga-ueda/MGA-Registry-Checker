@@ -5,7 +5,6 @@ namespace MgaRegistryChecker.Models;
 public enum WatchMode
 {
     KeyOnly,
-    Recursive,
     SingleValue
 }
 
