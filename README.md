@@ -4,9 +4,9 @@
 
 | 用途 | 名前 |
 |------|------|
-| 正式なアプリ名 | **MGA Registry Checker** |
-| 名前空間 | `MgaRegistryChecker` |
-| リポジトリ / プロジェクト / exe | `MGA-Registry-Checker` |
+| 正式なアプリ名 / EXE | **MGA Registry Checker** |
+| ソース・名前空間・プロジェクトファイル | `MgaRegistryChecker` |
+| GitHub リポジトリ | [MGA-Registry-Checker](https://github.com/mga-ueda/MGA-Registry-Checker) |
 
 ## 機能概要
 
@@ -21,24 +21,38 @@
 ## 必要環境
 
 - Windows
-- .NET 8 Runtime（または SDK）以降
+- 開発・通常ビルド: .NET 8 SDK
+- 単一 EXE リリース版: ランタイム同梱のため、配布先に .NET の別インストールは不要
 
 ## 実行
 
 ```powershell
 # 通常起動（メイン画面）
-dotnet run -c Release
+dotnet run --project MgaRegistryChecker.csproj -c Release
 
 # 差分チェックのみ（メイン画面なし）
-dotnet run -c Release -- --check
+dotnet run --project MgaRegistryChecker.csproj -c Release -- --check
 ```
 
 ビルド成果物の例:
 
 ```powershell
-.\bin\Release\net8.0-windows\MGA-Registry-Checker.exe
-.\bin\Release\net8.0-windows\MGA-Registry-Checker.exe --check
+& ".\bin\Release\net8.0-windows\MGA Registry Checker.exe"
+& ".\bin\Release\net8.0-windows\MGA Registry Checker.exe" --check
 ```
+
+## 単一 EXE のリリース発行
+
+```powershell
+dotnet publish MgaRegistryChecker.csproj -c Release -r win-x64
+```
+
+出力例:
+
+`.\bin\Release\net8.0-windows\win-x64\publish\MGA Registry Checker.exe`
+
+- 自己完結（self-contained）＋単一ファイル
+- 配布はこの EXE 1 本で足りる想定です（初回起動時に一時展開あり）
 
 ## コマンドライン（他アプリ連携）
 
@@ -59,14 +73,14 @@ dotnet run -c Release -- --check
 
 ```powershell
 # 起動後の戻りを待つ（推奨）
-Start-Process -FilePath "C:\Path\MGA-Registry-Checker.exe" -ArgumentList "--check" -Wait -PassThru
+Start-Process -FilePath "C:\Path\MGA Registry Checker.exe" -ArgumentList "--check" -Wait -PassThru
 ```
 
 ```csharp
 // Process.Start で同期待ち
 using var p = Process.Start(new ProcessStartInfo
 {
-    FileName = @"C:\Path\MGA-Registry-Checker.exe",
+    FileName = @"C:\Path\MGA Registry Checker.exe",
     Arguments = "--check",
     UseShellExecute = false
 });
@@ -127,7 +141,7 @@ int code = p?.ExitCode ?? -1;
 ## ビルド
 
 ```powershell
-dotnet build -c Release
+dotnet build MgaRegistryChecker.csproj -c Release
 ```
 
 ## 構成（開発者向け）

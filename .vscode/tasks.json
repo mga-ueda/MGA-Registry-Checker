@@ -7,7 +7,7 @@
       "type": "process",
       "args": [
         "build",
-        "${workspaceFolder}/MGA-Registry-Checker.csproj",
+        "${workspaceFolder}/MgaRegistryChecker.csproj",
         "/property:GenerateFullPaths=true",
         "/consoleloggerparameters:NoSummary;ForceNoAlign"
       ],
@@ -17,6 +17,26 @@
       },
       "presentation": {
         "reveal": "silent"
+      },
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "publish-single-file",
+      "command": "dotnet",
+      "type": "process",
+      "args": [
+        "publish",
+        "${workspaceFolder}/MgaRegistryChecker.csproj",
+        "-c",
+        "Release",
+        "-r",
+        "win-x64",
+        "/property:GenerateFullPaths=true",
+        "/consoleloggerparameters:NoSummary;ForceNoAlign"
+      ],
+      "group": "build",
+      "presentation": {
+        "reveal": "always"
       },
       "problemMatcher": "$msCompile"
     }

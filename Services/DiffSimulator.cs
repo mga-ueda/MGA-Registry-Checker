@@ -10,7 +10,7 @@ public static class DiffSimulator
 
     private static readonly string[] SampleRoots =
     [
-        @"HKEY_CURRENT_USER\Software\MGA-Registry-Checker\Demo",
+        @"HKEY_CURRENT_USER\Software\MgaRegistryChecker\Demo",
         @"HKEY_CURRENT_USER\Control Panel\Desktop",
         @"HKEY_CURRENT_USER\Control Panel\Desktop\WindowMetrics",
         @"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer",
